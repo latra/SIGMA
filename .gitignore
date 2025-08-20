@@ -1,0 +1,4 @@
+**credentials**
+env.local
+env.development.local
+.env
