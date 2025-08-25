@@ -1,46 +1,10 @@
 'use client'
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, DocumentCheckIcon } from '@heroicons/react/24/outline'
 import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '../contexts/AuthContext'
-
-// Navigation items for doctors (medical sections)
-const doctorNavigation = [
-  { name: 'Nuestro Equipo', href: '/team', current: false },
-  { name: 'Pacientes', href: '/patients', current: false },
-  { name: 'Admisiones', href: '/admissions', current: false },
-]
-
-// Navigation items for admins (medical + exam management)
-const adminDoctorNavigation = [
-  { name: 'Nuestro Equipo', href: '/team', current: false },
-  { name: 'Pacientes', href: '/patients', current: false },
-  { name: 'Admisiones', href: '/admissions', current: false },
-  { name: 'Exámenes', href: '/exams', current: false },
-]
-
-// Navigation items for police and other users
-const generalNavigation = [
-  { name: 'Nuestro Equipo', href: '/team', current: false },
-]
-
-// Navigation items for police users
-const policeNavigation = [
-  { name: 'Nuestro Equipo', href: '/team', current: false },
-  { name: 'Verificación', href: '/police', current: false },
-]
-
-// Navigation items for admin police
-const adminPoliceNavigation = [
-  { name: 'Nuestro Equipo', href: '/team', current: false },
-  { name: 'Verificación', href: '/police', current: false },
-  { name: 'Exámenes', href: '/exams', current: false },
-]
-
-// Navigation for non-authenticated users
-const publicNavigation = [
-  { name: 'Nuestro Equipo', href: '/team', current: false },
-]
+import { getThemeByRoute, themes, getNavigationForUser, type ThemeType } from '../../lib/theme-config'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -51,47 +15,24 @@ export default function Navbar() {
   const router = useRouter()
   const { user, systemUser, doctor, police, logout } = useAuth();
 
-  // Determine user role and theme
-  const userRole = systemUser?.role || (doctor ? 'doctor' : null)
-  const isPolice = userRole === 'police'
+  // Determine current theme based on route
+  const currentTheme: ThemeType = getThemeByRoute(pathname)
+  const theme = themes[currentTheme]
+  
+  // Determine user role
+  const userRole = systemUser?.role || (doctor ? 'doctor' : (police ? 'police' : null))
+  const isAdmin = systemUser?.is_admin || doctor?.is_admin || police?.is_admin || false
   const currentUser = doctor || police
   
-  // Theme colors based on role
-  const themeColor = isPolice ? '#810000' : '#004e81' // Police red vs Hospital blue
-  
-  // Images based on authentication and role
-  const titleImage = !user ? '/sistema.png' : (isPolice ? '/police-title-wh.png' : '/hosp-title-wh.png')
-  const altText = !user ? 'Sistema' : (isPolice ? 'Policía Nacional' : 'Hospital General de Real')
-
-  // Determine which navigation to show based on user role
-  const getNavigationItems = () => {
-    if (!user) {
-      return publicNavigation
-    }
-    
-    // Check if user is admin
-    const isAdmin = systemUser?.is_admin || doctor?.is_admin || police?.is_admin
-    
-    // Check if user is a doctor (either from systemUser or legacy doctor)
-    const isDoctor = systemUser?.role === 'doctor' || doctor
-    
-    if (isDoctor) {
-      return isAdmin ? adminDoctorNavigation : doctorNavigation
-    }
-    
-    if (isPolice) {
-      return isAdmin ? adminPoliceNavigation : policeNavigation
-    }
-    
-    // For other authenticated users
-    return generalNavigation
-  }
-
-  const currentNavigation = getNavigationItems()
+  // Get navigation items based on theme and user permissions
+  const currentNavigation = getNavigationForUser(userRole, isAdmin, currentTheme)
   const navigationWithCurrent = currentNavigation.map(item => ({
     ...item,
     current: pathname === item.href
   }))
+
+  const isPolice = police !== null
+  const isDoctor = doctor !== null
 
   const handleLogin = () => {
     router.push('/login')
@@ -103,12 +44,12 @@ export default function Navbar() {
   }
 
   return (
-    <Disclosure as="nav" className="relative" style={{ backgroundColor: themeColor }}>
+    <Disclosure as="nav" className="relative shadow-lg" style={{ backgroundColor: theme.primaryColor }}>
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
             {/* Mobile menu button*/}
-            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-white/5 hover:text-white focus:outline-2 focus:-outline-offset-1" style={{ outlineColor: themeColor }}>
+            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-white/10 hover:text-white focus:outline-2 focus:-outline-offset-1 transition-colors" style={{ outlineColor: theme.primaryColor }}>
               <span className="absolute -inset-0.5" />
               <span className="sr-only">Open main menu</span>
               <Bars3Icon aria-hidden="true" className="block size-6 group-data-open:hidden" />
@@ -118,9 +59,9 @@ export default function Navbar() {
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
             <div className="flex shrink-0 items-center">
               <img
-                alt={altText}
-                src={titleImage}
-                className="h-8 w-auto cursor-pointer"
+                alt={theme.altText}
+                src={theme.titleImage}
+                className="h-8 w-auto cursor-pointer transition-transform hover:scale-105"
                 onClick={() => router.push('/')}    
               />
             </div>
@@ -132,8 +73,8 @@ export default function Navbar() {
                     href={item.href}
                     aria-current={item.current ? 'page' : undefined}
                     className={classNames(
-                      item.current ? `bg-black/20 text-white` : 'text-gray-300 hover:bg-white/5 hover:text-white',
-                      'rounded-md px-3 py-2 text-md font-medium',
+                      item.current ? `bg-black/20 text-white` : 'text-gray-300 hover:bg-white/10 hover:text-white',
+                      'rounded-md px-3 py-2 text-md font-medium transition-colors',
                     )}
                   >
                     {item.name}
@@ -146,8 +87,17 @@ export default function Navbar() {
           
             {user ? (
               <>
+                {/* Services link for authenticated users */}
+                <Link
+                  href="/services"
+                  className="mr-4 inline-flex items-center px-4 py-2.5 text-base font-semibold rounded-lg text-white bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                >
+                  <DocumentCheckIcon className="w-5 h-5 mr-2" />
+                  Mis Servicios
+                </Link>
+                
                 <Menu as="div" className="relative ml-3">
-                  <MenuButton className="relative flex items-center space-x-2 rounded-md px-3 py-2 text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2" style={{ outlineColor: themeColor }}>
+                  <MenuButton className="relative flex items-center space-x-2 rounded-md px-3 py-2 text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 transition-colors" style={{ outlineColor: theme.primaryColor }}>
                     <span className="absolute -inset-1.5" />
                     <span className="sr-only">Open user menu</span>
                     {currentUser && (
@@ -202,8 +152,8 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={handleLogin}
-                className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ outlineColor: themeColor }}
+                className="rounded-md bg-white px-3 py-2 text-sm font-semibold shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 transition-colors"
+                style={{ outlineColor: theme.primaryColor, color: theme.primaryColor }}
               >
                 Iniciar sesión
               </button>
@@ -221,19 +171,34 @@ export default function Navbar() {
               href={item.href}
               aria-current={item.current ? 'page' : undefined}
               className={classNames(
-                item.current ? 'bg-hospital-blue/80 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white',
+                item.current ? 'bg-black/20 text-white' : 'text-gray-300 hover:bg-white/10 hover:text-white',
                 'block rounded-md px-3 py-2 text-base font-medium',
               )}
             >
               {item.name}
             </DisclosureButton>
           ))}
+          
+          {/* Services link for authenticated users - Mobile */}
+          {user && (
+            <div className="pt-4 pb-3 border-t border-white/20">
+              <DisclosureButton
+                as={Link}
+                href="/services"
+                className="flex items-center w-full px-4 py-3 text-lg font-semibold rounded-lg text-white bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 shadow-lg transition-all duration-200"
+              >
+                <DocumentCheckIcon className="w-6 h-6 mr-3" />
+                Mis Servicios
+              </DisclosureButton>
+            </div>
+          )}
+          
           {!user && (
             <div className="pt-4 pb-3 border-t border-gray-700">
               <button
                 onClick={handleLogin}
                 className="w-full rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ backgroundColor: themeColor, outlineColor: themeColor }}
+                style={{ backgroundColor: theme.primaryColor, outlineColor: theme.primaryColor }}
               >
                 Iniciar sesión
               </button>

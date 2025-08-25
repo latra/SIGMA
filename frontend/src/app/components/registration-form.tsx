@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { registerDoctor, registerPolice, DoctorRegister, PoliceRegister } from '../../lib/api'
+import { themes } from '../../lib/theme-config'
 
 type UserType = 'doctor' | 'police'
 
@@ -169,33 +170,16 @@ export default function RegistrationForm() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          {formData.userType === 'police' ? (
-            <>
-              <img
-                className="mx-auto h-24 w-auto"
-                src="/policia.png"
-                alt="Policía Nacional"
-              />
-              <img
-                className="mx-auto h-12 w-auto"
-                src="/police-title.png"
-                alt="Policía Nacional"
-              />
-            </>
-          ) : (
-            <>
-              <img
-                className="mx-auto h-24 w-auto"
-                src="/hosp-logo.png"
-                alt="Hospital General de Real"
-              />
-              <img
-                className="mx-auto h-12 w-auto"
-                src="/hosp-title.png"
-                alt="Hospital General de Real"
-              />
-            </>
-          )}
+          <img
+            className="mx-auto h-24 w-auto"
+            src={formData.userType === 'police' ? themes.police.logoImage : themes.hospital.logoImage}
+            alt={formData.userType === 'police' ? themes.police.altText : themes.hospital.altText}
+          />
+          <img
+            className="mx-auto h-12 w-auto"
+            src={formData.userType === 'police' ? themes.police.titleImage : themes.hospital.titleImage}
+            alt={formData.userType === 'police' ? themes.police.altText : themes.hospital.altText}
+          />
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Registro de Usuario
           </h2>
