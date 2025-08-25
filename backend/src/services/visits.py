@@ -4,7 +4,7 @@ from schemas import (
     Visit, VisitCreate, VisitUpdate, VisitSummary, VisitComplete, VisitStatus,
     VitalSignsBase, VitalSignsResponse, DiagnosisCreate, DiagnosisResponse,
     PrescriptionCreate, PrescriptionResponse, MedicalProcedureCreate, MedicalProcedureResponse,
-    MedicalEvolutionCreate, MedicalEvolutionResponse, DischargeRequest, Doctor
+    MedicalEvolutionCreate, MedicalEvolutionResponse, Doctor
 )
 from schemas.patient import (
     BloodAnalysisCreate, BloodAnalysisResponse, RadiologyStudyCreate, RadiologyStudyResponse
@@ -37,8 +37,7 @@ class VisitRepository(FirestoreService):
             data = doc.to_dict()
             # Convertir timestamps de string a datetime si es necesario
             datetime_fields = [
-                'created_at', 'updated_at', 'admission_date', 'discharge_date',
-                'follow_up_date'
+                'created_at', 'updated_at', 'admission_date', 'discharge_date'
             ]
             
             for field in datetime_fields:
@@ -62,13 +61,12 @@ class VisitRepository(FirestoreService):
     def _convert_nested_timestamps(self, data: dict):
         """Convierte timestamps en estructuras anidadas"""
         # Signos vitales
-        for vital_field in ['admission_vital_signs', 'current_vital_signs']:
-            if vital_field in data and data[vital_field] and 'measured_at' in data[vital_field]:
-                if isinstance(data[vital_field]['measured_at'], str):
-                    try:
-                        data[vital_field]['measured_at'] = datetime.fromisoformat(data[vital_field]['measured_at'].replace('Z', '+00:00'))
-                    except ValueError:
-                        data[vital_field]['measured_at'] = datetime.now()
+        if 'admission_vital_signs' in data and data['admission_vital_signs'] and 'measured_at' in data['admission_vital_signs']:
+            if isinstance(data['admission_vital_signs']['measured_at'], str):
+                try:
+                    data['admission_vital_signs']['measured_at'] = datetime.fromisoformat(data['admission_vital_signs']['measured_at'].replace('Z', '+00:00'))
+                except ValueError:
+                    data['admission_vital_signs']['measured_at'] = datetime.now()
         
         # Diagnósticos
         if 'diagnoses' in data:
@@ -249,8 +247,7 @@ class VisitRepository(FirestoreService):
         
         # Convertir timestamps principales
         datetime_fields = [
-            'created_at', 'updated_at', 'admission_date', 'discharge_date',
-            'follow_up_date'
+            'created_at', 'updated_at', 'admission_date', 'discharge_date'
         ]
         
         for field in datetime_fields:
@@ -258,11 +255,10 @@ class VisitRepository(FirestoreService):
                 visit_dict[field] = visit_dict[field].isoformat()
         
         # Convertir timestamps en signos vitales
-        for vital_field in ['admission_vital_signs', 'current_vital_signs']:
-            if vital_field in visit_dict and visit_dict[vital_field]:
-                vital_signs = visit_dict[vital_field]
-                if 'measured_at' in vital_signs and isinstance(vital_signs['measured_at'], datetime):
-                    vital_signs['measured_at'] = vital_signs['measured_at'].isoformat()
+        if 'admission_vital_signs' in visit_dict and visit_dict['admission_vital_signs']:
+            vital_signs = visit_dict['admission_vital_signs']
+            if 'measured_at' in vital_signs and isinstance(vital_signs['measured_at'], datetime):
+                vital_signs['measured_at'] = vital_signs['measured_at'].isoformat()
         
         # Convertir timestamps en listas médicas
         for medical_list, timestamp_field in [
@@ -303,9 +299,8 @@ class VisitService:
         if not doctor_info:
             doctor_info = self.doctor_service.get_doctor(visit_db.attending_doctor_dni)
         
-        # Obtener diagnóstico principal para compatibilidad
-        primary_diagnosis = visit_db.get_primary_diagnosis()
-        diagnosis_text = primary_diagnosis.primary_diagnosis if primary_diagnosis else None
+        # Obtener diagnóstico principal para compatibilidad (ahora es string)
+        diagnosis_text = visit_db.diagnoses if visit_db.diagnoses else None
         
         # Crear esquema compatible
         visit = Visit(
@@ -324,14 +319,12 @@ class VisitService:
             doctor_email=doctor_info.email if doctor_info else None,
             doctor_specialty=doctor_info.specialty if doctor_info else None,
             diagnosis=diagnosis_text,
-            tests=", ".join(visit_db.laboratory_orders + visit_db.imaging_orders) if visit_db.laboratory_orders or visit_db.imaging_orders else None,
-            treatment=visit_db.discharge_instructions,
-            evolution=visit_db.get_latest_evolution().clinical_impression if visit_db.get_latest_evolution() else None,
-            recommendations=visit_db.discharge_summary,
-            medication=", ".join([p.medication_name for p in visit_db.prescriptions]) if visit_db.prescriptions else None,
-            specialist_follow_up=visit_db.follow_up_specialty,
-            additional_observations=visit_db.additional_observations,
-            notes=", ".join(visit_db.nursing_notes) if visit_db.nursing_notes else None,
+            procedures=visit_db.procedures if visit_db.procedures else None,
+            treatment=getattr(visit_db, 'treatment', None),
+            evolution=visit_db.get_latest_evolution(),
+            medication=visit_db.prescriptions if visit_db.prescriptions else None,
+            additional_observations=getattr(visit_db, 'evolution', None),
+            notes=getattr(visit_db, 'nursing_notes', None),
             created_at=visit_db.created_at,
             updated_at=visit_db.updated_at,
             date_of_admission=visit_db.admission_date,  # Para compatibilidad
@@ -360,81 +353,15 @@ class VisitService:
                 notes=visit_db.admission_vital_signs.notes
             )
         
-        current_vital_signs = None
-        if visit_db.current_vital_signs:
-            current_vital_signs = VitalSignsResponse(
-                measurement_id=visit_db.current_vital_signs.measurement_id,
-                measured_at=visit_db.current_vital_signs.measured_at,
-                heart_rate=visit_db.current_vital_signs.heart_rate,
-                systolic_pressure=visit_db.current_vital_signs.systolic_pressure,
-                diastolic_pressure=visit_db.current_vital_signs.diastolic_pressure,
-                temperature=visit_db.current_vital_signs.temperature,
-                oxygen_saturation=visit_db.current_vital_signs.oxygen_saturation,
-                respiratory_rate=visit_db.current_vital_signs.respiratory_rate,
-                weight=visit_db.current_vital_signs.weight,
-                height=visit_db.current_vital_signs.height,
-                measured_by=visit_db.current_vital_signs.measured_by,
-                notes=visit_db.current_vital_signs.notes
-            )
+
         
-        # Convertir diagnósticos
-        diagnoses = [
-            DiagnosisResponse(
-                diagnosis_id=d.diagnosis_id,
-                diagnosed_at=d.diagnosed_at,
-                primary_diagnosis=d.primary_diagnosis,
-                secondary_diagnoses=d.secondary_diagnoses,
-                icd10_code=d.icd10_code,
-                severity=d.severity,
-                confirmed=d.confirmed,
-                differential_diagnoses=d.differential_diagnoses,
-                diagnosed_by=d.diagnosed_by
-            ) for d in visit_db.diagnoses
-        ]
-        
-        # Convertir procedimientos
-        procedures = [
-            MedicalProcedureResponse(
-                procedure_id=p.procedure_id,
-                performed_at=p.performed_at,
-                procedure_type=p.procedure_type,
-                description=p.description,
-                duration_minutes=p.duration_minutes,
-                complications=p.complications,
-                outcome=p.outcome,
-                performed_by=p.performed_by,
-                assistants=p.assistants
-            ) for p in visit_db.procedures
-        ]
-        
-        # Convertir evoluciones
-        evolutions = [
-            MedicalEvolutionResponse(
-                evolution_id=e.evolution_id,
-                recorded_at=e.recorded_at,
-                clinical_status=e.clinical_status,
-                symptoms=e.symptoms,
-                physical_examination=e.physical_examination,
-                clinical_impression=e.clinical_impression,
-                plan=e.plan,
-                recorded_by=e.recorded_by
-            ) for e in visit_db.evolutions
-        ]
-        
-        # Convertir prescripciones
-        prescriptions = [
-            PrescriptionResponse(
-                prescription_id=p.prescription_id,
-                prescribed_at=p.prescribed_at,
-                medication_name=p.medication_name,
-                dosage=p.dosage,
-                frequency=p.frequency,
-                duration=p.duration,
-                route=p.route,
-                instructions=p.instructions,
-                prescribed_by=p.prescribed_by
-            ) for p in visit_db.prescriptions
-        ]
+        # Los campos médicos ahora son strings simples
+        diagnoses = visit_db.diagnoses
+        procedures = visit_db.procedures
+        evolutions = visit_db.evolutions
+        prescriptions = visit_db.prescriptions
+        treatment = getattr(visit_db, 'treatment', '')
+        medication = visit_db.prescriptions if visit_db.prescriptions else ''
         
         # Convertir análisis de sangre
         blood_analyses = [
@@ -486,26 +413,21 @@ class VisitService:
             triage=visit_db.triage,
             priority_level=visit_db.priority_level,
             attending_doctor_dni=visit_db.attending_doctor_dni,
-            referring_doctor_dni=visit_db.referring_doctor_dni,
             admission_vital_signs=admission_vital_signs,
-            current_vital_signs=current_vital_signs,
             diagnoses=diagnoses,
             procedures=procedures,
             evolutions=evolutions,
             prescriptions=prescriptions,
-            laboratory_orders=visit_db.laboratory_orders,
-            imaging_orders=visit_db.imaging_orders,
-            referrals=visit_db.referrals,
+            treatment=treatment,
+            medication=medication,
+            laboratory_orders=getattr(visit_db, 'laboratory_orders', []),
+            imaging_orders=getattr(visit_db, 'imaging_orders', []),
+            referrals=getattr(visit_db, 'referrals', []),
             blood_analyses=blood_analyses,
             radiology_studies=radiology_studies,
-            discharge_summary=visit_db.discharge_summary,
-            discharge_instructions=visit_db.discharge_instructions,
-            follow_up_required=visit_db.follow_up_required,
-            follow_up_date=visit_db.follow_up_date,
-            follow_up_specialty=visit_db.follow_up_specialty,
-            nursing_notes=visit_db.nursing_notes,
-            additional_observations=visit_db.additional_observations,
-            complications=visit_db.complications,
+            nursing_notes=getattr(visit_db, 'nursing_notes', []),
+            additional_observations=getattr(visit_db, 'evolution', None),
+            complications=getattr(visit_db, 'complications', []),
             created_at=visit_db.created_at,
             updated_at=visit_db.updated_at,
             admission_date=visit_db.admission_date,
@@ -559,7 +481,6 @@ class VisitService:
                 triage=visit_create.triage,
                 priority_level=visit_create.priority_level,
                 attending_doctor_dni=doctor.dni,
-                referring_doctor_dni=doctor.dni,
                 admission_vital_signs=admission_vital_signs,
                 created_by=doctor.dni,
 
@@ -587,29 +508,30 @@ class VisitService:
                 if field in update_data and update_data[field] is not None:
                     setattr(visit_db, field, update_data[field])
             
-            # Actualizar signos vitales si se proporcionan
+            # Actualizar signos vitales de admisión si se proporcionan
             vital_fields = ['admission_heart_rate', 'admission_blood_pressure', 'admission_temperature', 'admission_oxygen_saturation']
             if any(field in update_data and update_data[field] is not None for field in vital_fields):
-                if not visit_db.current_vital_signs:
-                    visit_db.current_vital_signs = VitalSigns(measured_by=updated_by)
+                if not visit_db.admission_vital_signs:
+                    visit_db.admission_vital_signs = VitalSigns(measured_by=updated_by)
                 
                 if update_data.get('admission_heart_rate'):
-                    visit_db.current_vital_signs.heart_rate = update_data['admission_heart_rate']
+                    visit_db.admission_vital_signs.heart_rate = update_data['admission_heart_rate']
                 if update_data.get('admission_blood_pressure'):
-                    visit_db.current_vital_signs.systolic_pressure = update_data['admission_blood_pressure']
+                    visit_db.admission_vital_signs.systolic_pressure = update_data['admission_blood_pressure']
                 if update_data.get('admission_temperature'):
-                    visit_db.current_vital_signs.temperature = update_data['admission_temperature']
+                    visit_db.admission_vital_signs.temperature = update_data['admission_temperature']
                 if update_data.get('admission_oxygen_saturation'):
-                    visit_db.current_vital_signs.oxygen_saturation = update_data['admission_oxygen_saturation']
+                    visit_db.admission_vital_signs.oxygen_saturation = update_data['admission_oxygen_saturation']
             
             # Campos de compatibilidad con API actual
             compatibility_fields = {
-                'diagnosis': 'primary_diagnosis',
-                'tests': 'laboratory_orders',
-                'treatment': 'discharge_instructions',
-                'recommendations': 'discharge_summary',
-                'specialist_follow_up': 'follow_up_specialty',
-                'additional_observations': 'additional_observations',
+                'diagnosis': 'diagnoses',
+                'procedures': 'procedures',
+                'treatment': 'treatment',
+                'evolution': 'evolutions',
+                'medication': 'prescriptions',
+                'prescriptions': 'prescriptions',
+                'additional_observations': 'evolution',
                 'notes': 'nursing_notes'
             }
             
@@ -618,21 +540,21 @@ class VisitService:
                     value = update_data[api_field]
                     
                     if api_field == 'diagnosis' and value:
-                        # Crear o actualizar diagnóstico principal
-                        if not visit_db.diagnoses:
-                            diagnosis = Diagnosis(primary_diagnosis=value, diagnosed_by=updated_by)
-                            visit_db.add_diagnosis(diagnosis, updated_by)
-                        else:
-                            visit_db.diagnoses[0].primary_diagnosis = value
+                        # Actualizar diagnóstico como string
+                        visit_db.diagnoses = value
                     
-                    elif api_field == 'tests' and value:
-                        # Añadir a órdenes de laboratorio
-                        visit_db.laboratory_orders = value.split(', ') if ', ' in value else [value]
+                    elif api_field == 'procedures' and value:
+                        # Actualizar procedimientos como string
+                        visit_db.procedures = value
                     
                     elif api_field == 'notes' and value:
-                        # Añadir a notas de enfermería
-                        if value not in visit_db.nursing_notes:
-                            visit_db.nursing_notes.append(value)
+                        # Manejar notas como string si nursing_notes no existe como lista
+                        if hasattr(visit_db, 'nursing_notes') and isinstance(visit_db.nursing_notes, list):
+                            if value not in visit_db.nursing_notes:
+                                visit_db.nursing_notes.append(value)
+                        else:
+                            # Si no existe como lista, manejarlo como string
+                            setattr(visit_db, 'nursing_notes', value)
                     
                     else:
                         # Campos directos
@@ -647,23 +569,14 @@ class VisitService:
             logger.error(f"Error updating visit {visit_id}: {e}")
             return None
     
-    def discharge_visit(self, visit_id: str, discharge_request: DischargeRequest, discharged_by: Optional[str] = None) -> Optional[Visit]:
+    def discharge_visit(self, visit_id: str, discharged_by: Optional[str] = None) -> Optional[Visit]:
         """Da de alta a un paciente"""
         visit_db = self.repository.get_by_id(visit_id)
         if not visit_db:
             return None
         
         try:
-            visit_db.discharge_patient(
-                discharge_request.discharge_summary,
-                discharge_request.discharge_instructions,
-                discharged_by
-            )
-            
-            if discharge_request.follow_up_required:
-                visit_db.follow_up_required = True
-                visit_db.follow_up_date = discharge_request.follow_up_date
-                visit_db.follow_up_specialty = discharge_request.follow_up_specialty
+            visit_db.discharge_patient(discharged_by)
             
             if self.repository.update(visit_db):
                 return self._visit_db_to_visit(visit_db)
@@ -789,29 +702,36 @@ class VisitService:
             return None
         
         try:
-            diagnosis = Diagnosis(
-                primary_diagnosis=diagnosis_data.primary_diagnosis,
-                secondary_diagnoses=diagnosis_data.secondary_diagnoses,
-                icd10_code=diagnosis_data.icd10_code,
-                severity=diagnosis_data.severity,
-                confirmed=diagnosis_data.confirmed,
-                differential_diagnoses=diagnosis_data.differential_diagnoses,
-                diagnosed_by=diagnosed_by
-            )
+            # Crear texto del diagnóstico para añadir al campo string
+            diagnosis_text = f"Diagnóstico: {diagnosis_data.primary_diagnosis}"
+            if diagnosis_data.icd10_code:
+                diagnosis_text += f" (CIE-10: {diagnosis_data.icd10_code})"
+            if diagnosis_data.severity:
+                diagnosis_text += f" - Severidad: {diagnosis_data.severity}"
+            if diagnosis_data.secondary_diagnoses:
+                diagnosis_text += f" - Diagnósticos secundarios: {', '.join(diagnosis_data.secondary_diagnoses)}"
             
-            visit_db.add_diagnosis(diagnosis, diagnosed_by)
+            # Añadir al campo diagnoses como string
+            if visit_db.diagnoses:
+                visit_db.diagnoses += f"\n{diagnosis_text}"
+            else:
+                visit_db.diagnoses = diagnosis_text
+            
+            visit_db.update_timestamp(diagnosed_by)
             
             if self.repository.update(visit_db):
+                # Crear objeto de respuesta simulado para compatibilidad
+                from uuid import uuid4
                 return DiagnosisResponse(
-                    diagnosis_id=diagnosis.diagnosis_id,
-                    diagnosed_at=diagnosis.diagnosed_at,
-                    primary_diagnosis=diagnosis.primary_diagnosis,
-                    secondary_diagnoses=diagnosis.secondary_diagnoses,
-                    icd10_code=diagnosis.icd10_code,
-                    severity=diagnosis.severity,
-                    confirmed=diagnosis.confirmed,
-                    differential_diagnoses=diagnosis.differential_diagnoses,
-                    diagnosed_by=diagnosis.diagnosed_by
+                    diagnosis_id=str(uuid4()),
+                    diagnosed_at=datetime.now(),
+                    primary_diagnosis=diagnosis_data.primary_diagnosis,
+                    secondary_diagnoses=diagnosis_data.secondary_diagnoses,
+                    icd10_code=diagnosis_data.icd10_code,
+                    severity=diagnosis_data.severity,
+                    confirmed=diagnosis_data.confirmed,
+                    differential_diagnoses=diagnosis_data.differential_diagnoses,
+                    diagnosed_by=diagnosed_by
                 )
             return None
         except Exception as e:
@@ -825,29 +745,36 @@ class VisitService:
             return None
         
         try:
-            prescription = Prescription(
-                medication_name=prescription_data.medication_name,
-                dosage=prescription_data.dosage,
-                frequency=prescription_data.frequency,
-                duration=prescription_data.duration,
-                route=prescription_data.route,
-                instructions=prescription_data.instructions,
-                prescribed_by=prescribed_by
-            )
+            # Crear texto de la prescripción para añadir al campo string
+            prescription_text = f"Medicamento: {prescription_data.medication_name} - "
+            prescription_text += f"Dosis: {prescription_data.dosage} - "
+            prescription_text += f"Frecuencia: {prescription_data.frequency} - "
+            prescription_text += f"Duración: {prescription_data.duration} - "
+            prescription_text += f"Vía: {prescription_data.route}"
+            if prescription_data.instructions:
+                prescription_text += f" - Instrucciones: {prescription_data.instructions}"
             
-            visit_db.add_prescription(prescription, prescribed_by)
+            # Añadir al campo prescriptions como string
+            if visit_db.prescriptions:
+                visit_db.prescriptions += f"\n{prescription_text}"
+            else:
+                visit_db.prescriptions = prescription_text
+            
+            visit_db.update_timestamp(prescribed_by)
             
             if self.repository.update(visit_db):
+                # Crear objeto de respuesta simulado para compatibilidad
+                from uuid import uuid4
                 return PrescriptionResponse(
-                    prescription_id=prescription.prescription_id,
-                    prescribed_at=prescription.prescribed_at,
-                    medication_name=prescription.medication_name,
-                    dosage=prescription.dosage,
-                    frequency=prescription.frequency,
-                    duration=prescription.duration,
-                    route=prescription.route,
-                    instructions=prescription.instructions,
-                    prescribed_by=prescription.prescribed_by
+                    prescription_id=str(uuid4()),
+                    prescribed_at=datetime.now(),
+                    medication_name=prescription_data.medication_name,
+                    dosage=prescription_data.dosage,
+                    frequency=prescription_data.frequency,
+                    duration=prescription_data.duration,
+                    route=prescription_data.route,
+                    instructions=prescription_data.instructions,
+                    prescribed_by=prescribed_by
                 )
             return None
         except Exception as e:

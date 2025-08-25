@@ -24,6 +24,14 @@ const attentionPlaces = [
   { value: 'home', label: 'Casa' }
 ]
 
+const triageLevels = [
+  { value: 'unknown', label: 'Desconocido', color: 'bg-gray-100 text-gray-800' },
+  { value: 'green', label: 'Verde', color: 'bg-green-100 text-green-800' },
+  { value: 'yellow', label: 'Amarillo', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'red', label: 'Rojo', color: 'bg-red-100 text-red-800' },
+  { value: 'black', label: 'Negro', color: 'bg-black text-white' }
+]
+
 export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, onStudyAdded, autoEditMode }: VisitDetailsProps) {
   const [visit, setVisit] = useState<VisitComplete | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -124,7 +132,23 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
 
     setIsLoading(true)
     try {
-      await updateVisit(visitId, editedVisit)
+      await updateVisit(visitId, {
+        reason: editedVisit.reason,
+        attention_details: editedVisit.attention_details,
+        triage: editedVisit.triage,
+        priority_level: editedVisit.priority_level,
+        admission_heart_rate: editedVisit.heart_rate || editedVisit.admission_heart_rate,
+        admission_blood_pressure: editedVisit.blood_pressure || editedVisit.admission_blood_pressure,
+        admission_temperature: editedVisit.temperature || editedVisit.admission_temperature,
+        admission_oxygen_saturation: editedVisit.oxygen_saturation || editedVisit.admission_oxygen_saturation,
+        diagnosis: editedVisit.diagnoses || '',
+        procedures: editedVisit.procedures || '',
+        evolution: editedVisit.evolution || editedVisit.evolutions || '',
+        treatment: editedVisit.treatment || '',
+        medication: editedVisit.medication || '',
+        additional_observations: editedVisit.additional_observations,
+        notes: editedVisit.notes
+      })
       // Fetch complete visit details after update
       const completeVisit = await getVisitComplete(visitId)
       setVisit(completeVisit)
@@ -387,17 +411,18 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
                   Información Básica
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Motivo</label>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Motivo de la consulta</label>
                     {isEditing ? (
                       <textarea
                         value={currentVisit.reason}
                         onChange={(e) => setEditedVisit(prev => prev ? { ...prev, reason: e.target.value } : null)}
-                        rows={2}
+                        rows={4}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm resize-none"
+                        placeholder="Describa detalladamente el motivo de la consulta..."
                       />
                     ) : (
-                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300">
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300 min-h-[80px] whitespace-pre-wrap">
                         {currentVisit.reason}
                       </p>
                     )}
@@ -405,8 +430,24 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Lugar de la atención</label>
                     <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300">
-                      {attentionPlaces.find(place => place.value === currentVisit.attention_place)?.label || 'No registrado'} {currentVisit.attention_details ? `- ${currentVisit.attention_details}` : ''}
+                      {attentionPlaces.find(place => place.value === currentVisit.attention_place)?.label || 'No registrado'}
                     </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Detalles del lugar de atención</label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={currentVisit.attention_details || ''}
+                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, attention_details: e.target.value } : null)}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm"
+                        placeholder="Especificar detalles del lugar..."
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300">
+                        {currentVisit.attention_details || 'No especificado'}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Ubicación</label>
@@ -435,7 +476,7 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
               {/* Signos Vitales */}
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
                 <h4 className="text-sm font-bold text-black uppercase tracking-wide mb-4">
-                  Signos Vitales al Ingreso
+                  Signos Vitales
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
@@ -443,14 +484,16 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
                     {isEditing ? (
                       <input
                         type="number"
-                        value={currentVisit.admission_heart_rate || ''}
-                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, admission_heart_rate: e.target.value ? parseInt(e.target.value) : null } : null)}
+                        value={currentVisit.heart_rate || currentVisit.admission_vital_signs?.heart_rate || currentVisit.admission_heart_rate || ''}
+                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, heart_rate: e.target.value ? parseInt(e.target.value) : null } : null)}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm"
                         placeholder="BPM"
                       />
                     ) : (
                       <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300">
-                        {currentVisit.admission_heart_rate ? `${currentVisit.admission_heart_rate} BPM` : 'No registrado'}
+                        {(currentVisit.heart_rate || currentVisit.admission_vital_signs?.heart_rate || currentVisit.admission_heart_rate) ? 
+                          `${currentVisit.heart_rate || currentVisit.admission_vital_signs?.heart_rate || currentVisit.admission_heart_rate} BPM` : 
+                          'No registrado'}
                       </p>
                     )}
                   </div>
@@ -459,14 +502,16 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
                     {isEditing ? (
                       <input
                         type="text"
-                        value={currentVisit.admission_blood_pressure || ''}
-                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, admission_blood_pressure: e.target.value ? e.target.value : null } : null)}
+                        value={currentVisit.blood_pressure || currentVisit.admission_vital_signs?.systolic_pressure || currentVisit.admission_blood_pressure || ''}
+                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, blood_pressure: e.target.value ? e.target.value : null } : null)}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm"
-                        placeholder="mmHg"
+                        placeholder="120/80"
                       />
                     ) : (
                       <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300">
-                        {currentVisit.admission_blood_pressure ? `${currentVisit.admission_blood_pressure} mmHg` : 'No registrado'}
+                        {(currentVisit.blood_pressure || currentVisit.admission_vital_signs?.systolic_pressure || currentVisit.admission_blood_pressure) ? 
+                          `${currentVisit.blood_pressure || currentVisit.admission_vital_signs?.systolic_pressure || currentVisit.admission_blood_pressure} mmHg` : 
+                          'No registrado'}
                       </p>
                     )}
                   </div>
@@ -476,14 +521,16 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
                       <input
                         type="number"
                         step="0.1"
-                        value={currentVisit.admission_temperature || ''}
-                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, admission_temperature: e.target.value ? parseFloat(e.target.value) : null } : null)}
+                        value={currentVisit.temperature || currentVisit.admission_vital_signs?.temperature || currentVisit.admission_temperature || ''}
+                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, temperature: e.target.value ? parseFloat(e.target.value) : null } : null)}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm"
                         placeholder="°C"
                       />
                     ) : (
                       <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300">
-                        {currentVisit.admission_temperature ? `${currentVisit.admission_temperature}°C` : 'No registrado'}
+                        {(currentVisit.temperature || currentVisit.admission_vital_signs?.temperature || currentVisit.admission_temperature) ? 
+                          `${currentVisit.temperature || currentVisit.admission_vital_signs?.temperature || currentVisit.admission_temperature}°C` : 
+                          'No registrado'}
                       </p>
                     )}
                   </div>
@@ -492,14 +539,86 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
                     {isEditing ? (
                       <input
                         type="number"
-                        value={currentVisit.admission_oxygen_saturation || ''}
-                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, admission_oxygen_saturation: e.target.value ? parseInt(e.target.value) : null } : null)}
+                        value={currentVisit.oxygen_saturation || currentVisit.admission_vital_signs?.oxygen_saturation || currentVisit.admission_oxygen_saturation || ''}
+                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, oxygen_saturation: e.target.value ? parseInt(e.target.value) : null } : null)}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm"
                         placeholder="%"
                       />
                     ) : (
                       <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300">
-                        {currentVisit.admission_oxygen_saturation ? `${currentVisit.admission_oxygen_saturation}%` : 'No registrado'}
+                        {(currentVisit.oxygen_saturation || currentVisit.admission_vital_signs?.oxygen_saturation || currentVisit.admission_oxygen_saturation) ? 
+                          `${currentVisit.oxygen_saturation || currentVisit.admission_vital_signs?.oxygen_saturation || currentVisit.admission_oxygen_saturation}%` : 
+                          'No registrado'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {currentVisit.admission_vital_signs?.measured_at && (
+                  <div className="mt-3 text-xs text-gray-500">
+                    Medido el: {formatDate(currentVisit.admission_vital_signs.measured_at)}
+                  </div>
+                )}
+              </div>
+
+
+
+              {/* Triage y Prioridad */}
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h4 className="text-sm font-bold text-black uppercase tracking-wide mb-4">
+                  Clasificación y Prioridad
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-3">Clasificación de Triage</label>
+                    {isEditing ? (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        {triageLevels.map(triage => (
+                          <button
+                            key={triage.value}
+                            type="button"
+                            onClick={() => setEditedVisit(prev => prev ? { ...prev, triage: triage.value as any } : null)}
+                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                              currentVisit.triage === triage.value
+                                ? triage.color
+                                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {triage.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <span className={`px-3 py-2 rounded-md text-sm font-medium ${
+                          triageLevels.find(t => t.value === currentVisit.triage)?.color || 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {triageLevels.find(t => t.value === currentVisit.triage)?.label || 'No especificado'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Nivel de Prioridad (1-5)</label>
+                    {isEditing ? (
+                      <select
+                        value={currentVisit.priority_level || 3}
+                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, priority_level: parseInt(e.target.value) } : null)}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm"
+                      >
+                        <option value={1}>1 - Muy Baja</option>
+                        <option value={2}>2 - Baja</option>
+                        <option value={3}>3 - Media</option>
+                        <option value={4}>4 - Alta</option>
+                        <option value={5}>5 - Muy Alta</option>
+                      </select>
+                    ) : (
+                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300">
+                        {currentVisit.priority_level ? `${currentVisit.priority_level} - ${
+                          currentVisit.priority_level === 1 ? 'Muy Baja' :
+                          currentVisit.priority_level === 2 ? 'Baja' :
+                          currentVisit.priority_level === 3 ? 'Media' :
+                          currentVisit.priority_level === 4 ? 'Alta' : 'Muy Alta'
+                        }` : 'No especificado'}
                       </p>
                     )}
                   </div>
@@ -511,26 +630,30 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
           {activeTab === 'medical' && (
             <div className="space-y-6">
               
-              {/* Exámenes */}
+              {/* Órdenes de Laboratorio */}
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
                 <h4 className="text-sm font-bold text-black uppercase tracking-wide mb-4">
-                  Pruebas Realizadas
+                  Órdenes de Laboratorio
                 </h4>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Pruebas</label>
-                  {isEditing ? (
-                    <textarea
-                      value={currentVisit.tests || ''}
-                      onChange={(e) => setEditedVisit(prev => prev ? { ...prev, tests: e.target.value } : null)}
-                      rows={3}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm resize-none"
-                      placeholder="Ingrese los exámenes solicitados..."
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300 min-h-[60px] whitespace-pre-wrap">
-                      {currentVisit.tests || 'No especificado'}
-                    </p>
-                  )}
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Pruebas Solicitadas</label>
+                                      {isEditing ? (
+                      <textarea
+                        value={currentVisit.procedures || ''}
+                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, procedures: e.target.value } : null)}
+                        rows={3}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm resize-none"
+                        placeholder="Ingrese los exámenes solicitados..."
+                      />
+                    ) : (
+                      <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300 min-h-[60px]">
+                        {currentVisit.procedures ? (
+                          <p className="whitespace-pre-wrap">{currentVisit.procedures}</p>
+                        ) : (
+                          <p className="text-gray-500">No especificado</p>
+                        )}
+                      </div>
+                    )}
                 </div>
               </div>
               {/* Diagnóstico */}
@@ -543,16 +666,20 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
                     <label className="block text-xs font-medium text-gray-700 mb-1">Diagnóstico</label>
                     {isEditing ? (
                       <textarea
-                        value={currentVisit.diagnosis || ''}
-                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, diagnosis: e.target.value } : null)}
+                        value={currentVisit.diagnoses || ''}
+                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, diagnoses: e.target.value } : null)}
                         rows={3}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm resize-none"
-                        placeholder="Ingrese el diagnóstico..."
+                        placeholder="Ingrese el diagnóstico principal..."
                       />
                     ) : (
-                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300 min-h-[60px] whitespace-pre-wrap">
-                        {currentVisit.diagnosis || 'No especificado'}
-                      </p>
+                      <div className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300 min-h-[60px]">
+                        {currentVisit.diagnoses ? (
+                          <p className="whitespace-pre-wrap">{currentVisit.diagnoses}</p>
+                        ) : (
+                          <p className="text-gray-500">No especificado</p>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div>
@@ -1417,15 +1544,15 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
                     <label className="block text-xs font-medium text-gray-700 mb-1">Evolución</label>
                     {isEditing ? (
                       <textarea
-                        value={currentVisit.evolution || ''}
-                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, evolution: e.target.value } : null)}
+                        value={currentVisit.evolution || currentVisit.evolutions || ''}
+                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, evolution: e.target.value, evolutions: e.target.value } : null)}
                         rows={4}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm resize-none"
                         placeholder="Describa la evolución del paciente..."
                       />
                     ) : (
                       <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300 min-h-[80px] whitespace-pre-wrap">
-                        {currentVisit.evolution || 'No especificado'}
+                        {currentVisit.evolution || currentVisit.evolutions || 'No especificado'}
                       </p>
                     )}
                   </div>
@@ -1450,72 +1577,7 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
             </div>
           )}
 
-          {activeTab === 'discharge' && (
-            <div className="space-y-6">
-              {/* Alta */}
-              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <h4 className="text-sm font-bold text-black uppercase tracking-wide mb-4">
-                  Información de Alta
-                </h4>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de Alta</label>
-                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300">
-                      {formatDate(currentVisit.date_of_discharge)}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Recomendaciones</label>
-                    {isEditing ? (
-                      <textarea
-                        value={currentVisit.recommendations || ''}
-                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, recommendations: e.target.value } : null)}
-                        rows={3}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm resize-none"
-                        placeholder="Ingrese las recomendaciones..."
-                      />
-                    ) : (
-                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300 min-h-[60px] whitespace-pre-wrap">
-                        {currentVisit.recommendations || 'No especificado'}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Seguimiento Especialista</label>
-                    {isEditing ? (
-                      <textarea
-                        value={currentVisit.specialist_follow_up || ''}
-                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, specialist_follow_up: e.target.value } : null)}
-                        rows={2}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm resize-none"
-                        placeholder="Ingrese el seguimiento con especialista..."
-                      />
-                    ) : (
-                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300 min-h-[40px] whitespace-pre-wrap">
-                        {currentVisit.specialist_follow_up || 'No especificado'}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Notas</label>
-                    {isEditing ? (
-                      <textarea
-                        value={currentVisit.notes || ''}
-                        onChange={(e) => setEditedVisit(prev => prev ? { ...prev, notes: e.target.value } : null)}
-                        rows={3}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#4fbbeb] focus:border-[#4fbbeb] text-sm resize-none"
-                        placeholder="Ingrese notas adicionales..."
-                      />
-                    ) : (
-                      <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-md border border-gray-300 min-h-[60px] whitespace-pre-wrap">
-                        {currentVisit.notes || 'No especificado'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+
         </div>
 
         {/* Footer */}

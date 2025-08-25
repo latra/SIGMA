@@ -3,8 +3,7 @@ from typing import Optional, List
 from schemas import (
     VisitBase, Visit, VisitCreate, VisitStatus, VisitUpdate, VisitSummary, 
     VisitComplete, VitalSignsBase, VitalSignsResponse, DiagnosisCreate, 
-    DiagnosisResponse, PrescriptionCreate, PrescriptionResponse,
-    DischargeRequest, Doctor
+    DiagnosisResponse, PrescriptionCreate, PrescriptionResponse, Doctor
 )
 from schemas.patient import (
     BloodAnalysisCreate, BloodAnalysisResponse, RadiologyStudyCreate, RadiologyStudyResponse
@@ -130,46 +129,13 @@ async def update_visit(
 
 @visit_router.put("/{visit_id}/discharge", response_model=Visit)
 async def discharge_visit(
-    visit_id: str,
-    discharge_request: DischargeRequest,
-    current_user: Doctor = Depends(firebase_auth.verify_token)
-):
-    """Da de alta a un paciente (versión mejorada)"""
-    try:
-        visit = visit_service.discharge_visit(
-            visit_id, discharge_request, discharged_by=current_user.dni
-        )
-        if not visit:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Visit not found"
-            )
-        return visit
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error discharging patient: {str(e)}"
-        )
-
-
-@visit_router.put("/{visit_id}/discharge-simple", response_model=Visit)
-async def discharge_visit_simple(
     visit_id: str, 
     current_user: Doctor = Depends(firebase_auth.verify_token)
 ):
-    """Da de alta a un paciente (versión simple para compatibilidad)"""
+    """Da de alta a un paciente"""
     try:
-        # Crear request básico para compatibilidad con API anterior
-        discharge_request = DischargeRequest(
-            discharge_summary="Alta médica",
-            discharge_instructions="Seguir indicaciones médicas",
-            follow_up_required=False
-        )
-        
         visit = visit_service.discharge_visit(
-            visit_id, discharge_request, discharged_by=current_user.dni
+            visit_id, discharged_by=current_user.dni
         )
         if not visit:
             raise HTTPException(

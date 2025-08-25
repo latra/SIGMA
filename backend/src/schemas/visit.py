@@ -131,24 +131,14 @@ class VisitUpdate(BaseModel):
     
     # Información médica básica (compatibilidad con API actual)
     diagnosis: Optional[str] = Field(None, description="Diagnóstico principal")
-    tests: Optional[str] = Field(None, description="Pruebas realizadas")
+    procedures: Optional[str] = Field(None, description="Procedimientos realizados")
     treatment: Optional[str] = Field(None, description="Tratamiento aplicado")
     evolution: Optional[str] = Field(None, description="Evolución del paciente")
-    recommendations: Optional[str] = Field(None, description="Recomendaciones")
+
     medication: Optional[str] = Field(None, description="Medicación prescrita")
-    specialist_follow_up: Optional[str] = Field(None, description="Seguimiento por especialista")
+
     additional_observations: Optional[str] = Field(None, description="Observaciones adicionales")
     notes: Optional[str] = Field(None, description="Notas generales")
-
-
-class DischargeRequest(BaseModel):
-    """Esquema para dar de alta a un paciente"""
-    discharge_summary: str = Field(..., description="Resumen de alta")
-    discharge_instructions: str = Field(..., description="Instrucciones de alta")
-    follow_up_required: bool = Field(False, description="Si requiere seguimiento")
-    follow_up_date: Optional[datetime] = Field(None, description="Fecha de seguimiento")
-    follow_up_specialty: Optional[str] = Field(None, description="Especialidad para seguimiento")
-
 
 class Visit(VisitBase):
     """Esquema de respuesta básica de visita (compatible con API actual)"""
@@ -165,12 +155,12 @@ class Visit(VisitBase):
     
     # Información médica básica (compatibilidad)
     diagnosis: Optional[str] = Field(None, description="Diagnóstico principal")
-    tests: Optional[str] = Field(None, description="Pruebas realizadas")
+    procedures: Optional[str] = Field(None, description="Procedimientos realizados")
     treatment: Optional[str] = Field(None, description="Tratamiento aplicado")
     evolution: Optional[str] = Field(None, description="Evolución del paciente")
-    recommendations: Optional[str] = Field(None, description="Recomendaciones")
+
     medication: Optional[str] = Field(None, description="Medicación prescrita")
-    specialist_follow_up: Optional[str] = Field(None, description="Seguimiento por especialista")
+
     additional_observations: Optional[str] = Field(None, description="Observaciones adicionales")
     notes: Optional[str] = Field(None, description="Notas generales")
     
@@ -200,15 +190,15 @@ class VisitComplete(BaseModel):
     
     # Profesionales
     attending_doctor_dni: str = Field(..., description="DNI del médico tratante")
-    referring_doctor_dni: Optional[str] = Field(None, description="DNI del médico que refiere")
     
     # Datos médicos estructurados
     admission_vital_signs: Optional[VitalSignsResponse] = Field(None, description="Signos vitales de admisión")
-    current_vital_signs: Optional[VitalSignsResponse] = Field(None, description="Signos vitales actuales")
-    diagnoses: List[DiagnosisResponse] = Field(default_factory=list, description="Diagnósticos")
-    procedures: List[MedicalProcedureResponse] = Field(default_factory=list, description="Procedimientos")
-    evolutions: List[MedicalEvolutionResponse] = Field(default_factory=list, description="Evoluciones médicas")
-    prescriptions: List[PrescriptionResponse] = Field(default_factory=list, description="Prescripciones")
+    diagnoses: str = Field(default="", description="Diagnósticos de la visita")
+    procedures: str = Field(default="", description="Procedimientos realizados")
+    evolutions: str = Field(default="", description="Evoluciones médicas")
+    prescriptions: str = Field(default="", description="Prescripciones médicas")
+    treatment: str = Field(default="", description="Tratamiento")
+    medication: str = Field(default="", description="Medicación")
     
     # Órdenes y referencias
     laboratory_orders: List[str] = Field(default_factory=list, description="Órdenes de laboratorio")
@@ -219,12 +209,7 @@ class VisitComplete(BaseModel):
     blood_analyses: List[BloodAnalysisResponse] = Field(default_factory=list, description="Análisis de sangre realizados durante esta visita")
     radiology_studies: List[RadiologyStudyResponse] = Field(default_factory=list, description="Estudios radiológicos realizados durante esta visita")
     
-    # Información de alta
-    discharge_summary: Optional[str] = Field(None, description="Resumen de alta")
-    discharge_instructions: Optional[str] = Field(None, description="Instrucciones de alta")
-    follow_up_required: bool = Field(False, description="Si requiere seguimiento")
-    follow_up_date: Optional[datetime] = Field(None, description="Fecha de seguimiento")
-    follow_up_specialty: Optional[str] = Field(None, description="Especialidad para seguimiento")
+
     
     # Observaciones
     nursing_notes: List[str] = Field(default_factory=list, description="Notas de enfermería")

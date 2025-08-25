@@ -96,36 +96,18 @@ class VisitDB(BaseModel):
     
     # Información del médico responsable
     attending_doctor_dni: str = Field(..., description="DNI del médico tratante")
-    referring_doctor_dni: Optional[str] = Field(None, description="DNI del médico que refiere")
     
     # Datos médicos estructurados
     admission_vital_signs: Optional[VitalSigns] = Field(None, description="Signos vitales de admisión")
-    current_vital_signs: Optional[VitalSigns] = Field(None, description="Signos vitales actuales")
-    diagnoses: List[Diagnosis] = Field(default_factory=list, description="Diagnósticos de la visita")
-    procedures: List[MedicalProcedure] = Field(default_factory=list, description="Procedimientos realizados")
-    evolutions: List[MedicalEvolution] = Field(default_factory=list, description="Evoluciones médicas")
-    prescriptions: List[Prescription] = Field(default_factory=list, description="Prescripciones médicas")
-    
-    # Información de laboratorio y estudios
-    laboratory_orders: List[str] = Field(default_factory=list, description="Órdenes de laboratorio")
-    imaging_orders: List[str] = Field(default_factory=list, description="Órdenes de imagenología")
-    referrals: List[str] = Field(default_factory=list, description="Referencias a especialistas")
-    
+    diagnoses: str = Field(default="", description="Diagnósticos de la visita")
+    procedures: str = Field(default="", description="Procedimientos realizados")
+    evolutions: str = Field(default="", description="Evoluciones médicas")
+    prescriptions: str = Field(default="", description="Prescripciones médicas")
+    treatment: str = Field(default="", description="Tratamiento")
+    evolution: str = Field(default="", description="Evolución del paciente")
     # Análisis de sangre y estudios radiológicos relacionados con esta visita específica
     blood_analyses: List['BloodAnalysis'] = Field(default_factory=list, description="Análisis de sangre realizados durante esta visita")
     radiology_studies: List['RadiologyStudy'] = Field(default_factory=list, description="Estudios radiológicos realizados durante esta visita")
-    
-    # Información de alta/discharge
-    discharge_summary: Optional[str] = Field(None, description="Resumen de alta")
-    discharge_instructions: Optional[str] = Field(None, description="Instrucciones de alta")
-    follow_up_required: bool = Field(False, description="Si requiere seguimiento")
-    follow_up_date: Optional[datetime] = Field(None, description="Fecha de seguimiento")
-    follow_up_specialty: Optional[str] = Field(None, description="Especialidad para seguimiento")
-    
-    # Observaciones adicionales
-    nursing_notes: List[str] = Field(default_factory=list, description="Notas de enfermería")
-    additional_observations: Optional[str] = Field(None, description="Observaciones adicionales")
-    complications: List[str] = Field(default_factory=list, description="Complicaciones durante la visita")
     
     # Metadatos del sistema
     created_at: datetime = Field(default_factory=datetime.now, description="Fecha de creación")
@@ -151,64 +133,119 @@ class VisitDB(BaseModel):
             self.last_updated_by = updated_by
     
     def add_vital_signs(self, vital_signs: VitalSigns, measured_by: Optional[str] = None):
-        """Actualiza los signos vitales actuales"""
+        """Actualiza los signos vitales de admisión"""
         if measured_by:
             vital_signs.measured_by = measured_by
-        self.current_vital_signs = vital_signs
+        self.admission_vital_signs = vital_signs
         self.update_timestamp(measured_by)
     
     def add_diagnosis(self, diagnosis: Diagnosis, diagnosed_by: Optional[str] = None):
-        """Añade un diagnóstico a la visita"""
+        """Añade un diagnóstico a la visita (como texto)"""
         if diagnosed_by:
             diagnosis.diagnosed_by = diagnosed_by
-        self.diagnoses.append(diagnosis)
+        
+        # Convertir diagnóstico a texto
+        diagnosis_text = f"Diagnóstico: {diagnosis.primary_diagnosis}"
+        if diagnosis.icd10_code:
+            diagnosis_text += f" (CIE-10: {diagnosis.icd10_code})"
+        if diagnosis.severity:
+            diagnosis_text += f" - Severidad: {diagnosis.severity}"
+        
+        # Añadir al campo string
+        if self.diagnoses:
+            self.diagnoses += f"\n{diagnosis_text}"
+        else:
+            self.diagnoses = diagnosis_text
         self.update_timestamp(diagnosed_by)
     
     def add_procedure(self, procedure: MedicalProcedure, performed_by: Optional[str] = None):
-        """Añade un procedimiento a la visita"""
+        """Añade un procedimiento a la visita (como texto)"""
         if performed_by:
             procedure.performed_by = performed_by
-        self.procedures.append(procedure)
+        
+        # Convertir procedimiento a texto
+        procedure_text = f"Procedimiento: {procedure.procedure_type} - {procedure.description}"
+        if procedure.duration_minutes:
+            procedure_text += f" (Duración: {procedure.duration_minutes} min)"
+        if procedure.outcome:
+            procedure_text += f" - Resultado: {procedure.outcome}"
+        
+        # Añadir al campo string
+        if self.procedures:
+            self.procedures += f"\n{procedure_text}"
+        else:
+            self.procedures = procedure_text
         self.update_timestamp(performed_by)
     
     def add_evolution(self, evolution: MedicalEvolution, recorded_by: Optional[str] = None):
-        """Añade una evolución médica"""
+        """Añade una evolución médica (como texto)"""
         if recorded_by:
             evolution.recorded_by = recorded_by
-        self.evolutions.append(evolution)
+        
+        # Convertir evolución a texto
+        evolution_text = f"Estado clínico: {evolution.clinical_status}"
+        if evolution.symptoms:
+            evolution_text += f" - Síntomas: {', '.join(evolution.symptoms)}"
+        if evolution.physical_examination:
+            evolution_text += f" - Examen físico: {evolution.physical_examination}"
+        if evolution.clinical_impression:
+            evolution_text += f" - Impresión clínica: {evolution.clinical_impression}"
+        if evolution.plan:
+            evolution_text += f" - Plan: {evolution.plan}"
+        
+        # Añadir al campo string
+        if self.evolutions:
+            self.evolutions += f"\n{evolution_text}"
+        else:
+            self.evolutions = evolution_text
         self.update_timestamp(recorded_by)
     
     def add_prescription(self, prescription: Prescription, prescribed_by: Optional[str] = None):
-        """Añade una prescripción médica"""
+        """Añade una prescripción médica (como texto)"""
         if prescribed_by:
             prescription.prescribed_by = prescribed_by
-        self.prescriptions.append(prescription)
+        
+        # Convertir prescripción a texto
+        prescription_text = f"Medicamento: {prescription.medication_name} - "
+        prescription_text += f"Dosis: {prescription.dosage} - "
+        prescription_text += f"Frecuencia: {prescription.frequency} - "
+        prescription_text += f"Duración: {prescription.duration} - "
+        prescription_text += f"Vía: {prescription.route}"
+        if prescription.instructions:
+            prescription_text += f" - Instrucciones: {prescription.instructions}"
+        
+        # Añadir al campo string
+        if self.prescriptions:
+            self.prescriptions += f"\n{prescription_text}"
+        else:
+            self.prescriptions = prescription_text
         self.update_timestamp(prescribed_by)
     
-    def discharge_patient(self, discharge_summary: str, instructions: str, discharged_by: Optional[str] = None):
+    def discharge_patient(self, discharged_by: Optional[str] = None):
         """Da de alta al paciente"""
         self.visit_status = VisitStatus.DISCHARGE
         self.discharge_date = datetime.now()
-        self.discharge_summary = discharge_summary
-        self.discharge_instructions = instructions
         self.is_completed = True
         self.update_timestamp(discharged_by)
     
     def get_latest_vital_signs(self) -> Optional[VitalSigns]:
-        """Obtiene los signos vitales más recientes"""
-        return self.current_vital_signs or self.admission_vital_signs
+        """Obtiene los signos vitales de admisión"""
+        return self.admission_vital_signs
     
-    def get_primary_diagnosis(self) -> Optional[Diagnosis]:
-        """Obtiene el diagnóstico principal más reciente"""
+    def get_primary_diagnosis(self) -> Optional[str]:
+        """Obtiene el diagnóstico principal (ahora como string)"""
         if not self.diagnoses:
             return None
-        return max(self.diagnoses, key=lambda x: x.diagnosed_at)
+        # Devolver la primera línea del diagnóstico (que es el principal)
+        return self.diagnoses.split('\n')[0] if self.diagnoses else None
     
-    def get_latest_evolution(self) -> Optional[MedicalEvolution]:
-        """Obtiene la evolución médica más reciente"""
+    def get_latest_evolution(self) -> Optional[str]:
+        """Obtiene la evolución médica más reciente (ahora como string)"""
         if not self.evolutions:
             return None
-        return max(self.evolutions, key=lambda x: x.recorded_at)
+        # Devolver la última línea del campo evolutions (que sería la más reciente)
+        lines = self.evolutions.split('\n')
+        return lines[-1] if lines else None
     
     def calculate_length_of_stay(self) -> Optional[int]:
         """Calcula la duración de la estancia en horas"""

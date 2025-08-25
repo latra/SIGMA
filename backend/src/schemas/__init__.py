@@ -10,7 +10,7 @@ from .visit import (
     VitalSignsBase, VitalSignsResponse, DiagnosisCreate, DiagnosisResponse,
     PrescriptionCreate, PrescriptionResponse, MedicalProcedureCreate,
     MedicalProcedureResponse, MedicalEvolutionCreate, MedicalEvolutionResponse,
-    DischargeRequest, VisitSearchFilters
+    VisitSearchFilters
 )
 from .doctor import Doctor, DoctorCreate
 from .user import (
@@ -29,8 +29,7 @@ __all__ = [
     "VisitBase", "Visit", "VisitCreate", "VisitUpdate", "VisitSummary", "VisitComplete",
     "VitalSignsBase", "VitalSignsResponse", "DiagnosisCreate", "DiagnosisResponse",
     "PrescriptionCreate", "PrescriptionResponse", "MedicalProcedureCreate",
-    "MedicalProcedureResponse", "MedicalEvolutionCreate", "MedicalEvolutionResponse",
-    "DischargeRequest", "VisitSearchFilters",
+    "MedicalProcedureResponse", "MedicalEvolutionCreate", "MedicalEvolutionResponse", "VisitSearchFilters",
     "Doctor", "DoctorCreate",
     "User", "UserCreate", "UserUpdate", "UserSummary", "UserSearchFilters",
     "DoctorNew", "DoctorCreateNew", "DoctorUpdate", "DoctorSummary", "DoctorProfile", "DoctorRegister",

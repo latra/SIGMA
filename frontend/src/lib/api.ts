@@ -550,15 +550,42 @@ export interface Visit {
   doctor_email?: string
   doctor_specialty?: string
   diagnosis?: string
-  tests?: string
+  procedures?: string
   treatment?: string
   evolution?: string
-  recommendations?: string
+
   medication?: string
   date_of_discharge?: string
-  specialist_follow_up?: string
+
   additional_observations?: string
   notes?: string
+}
+
+export interface VitalSigns {
+  heart_rate?: number
+  systolic_pressure?: string
+  diastolic_pressure?: string
+  temperature?: number
+  oxygen_saturation?: number
+  respiratory_rate?: number
+  weight?: number
+  height?: number
+  notes?: string
+  measurement_id: string
+  measured_at: string
+  measured_by: string
+}
+
+export interface Diagnosis {
+  primary_diagnosis: string
+  secondary_diagnoses: string[]
+  icd10_code?: string
+  severity?: string
+  confirmed: boolean
+  differential_diagnoses: string[]
+  diagnosis_id: string
+  diagnosed_at: string
+  diagnosed_by: string
 }
 
 export interface VisitComplete {
@@ -572,14 +599,16 @@ export interface VisitComplete {
   triage?: Triage
   priority_level: number
   attending_doctor_dni: string
-  referring_doctor_dni?: string
+  admission_vital_signs?: VitalSigns
+  diagnoses: string
+  procedures: string
+  evolutions: string
+  treatment: string
+  medication: string
+  laboratory_orders: string[]
   blood_analyses: BloodAnalysis[]
   radiology_studies: RadiologyStudy[]
-  discharge_summary?: string
-  discharge_instructions?: string
-  follow_up_required: boolean
-  follow_up_date?: string
-  follow_up_specialty?: string
+  additional_observations?: string
   created_at: string
   updated_at: string
   admission_date: string
@@ -588,21 +617,23 @@ export interface VisitComplete {
   last_updated_by?: string
   is_completed: boolean
   length_of_stay_hours?: number
-  // For compatibility with existing code
+  // Compatibility fields for date formats
   date_of_admission?: string
   date_of_discharge?: string
+  // Compatibility fields for vital signs access - now pointing to admission_vital_signs
+  heart_rate?: number
+  blood_pressure?: string
+  temperature?: number
+  oxygen_saturation?: number
+  // Legacy compatibility
   admission_heart_rate?: number
   admission_blood_pressure?: string
   admission_temperature?: number
   admission_oxygen_saturation?: number
+  // Compatibility fields for singular field names
   diagnosis?: string
-  tests?: string
-  treatment?: string
   evolution?: string
-  recommendations?: string
-  medication?: string
-  specialist_follow_up?: string
-  additional_observations?: string
+
   notes?: string
 }
 
@@ -622,18 +653,25 @@ export interface VisitBase {
 
 export interface VisitUpdate {
   reason?: string
+  attention_details?: string
+  triage?: Triage
+  priority_level?: number // 1-5 priority level
+  heart_rate?: number
+  blood_pressure?: string
+  temperature?: number
+  oxygen_saturation?: number
+  // Legacy compatibility
   admission_heart_rate?: number
   admission_blood_pressure?: string
   admission_temperature?: number
   admission_oxygen_saturation?: number
-  triage?: Triage
   diagnosis?: string
-  tests?: string
+  procedures?: string
   treatment?: string
   evolution?: string
-  recommendations?: string
+
   medication?: string
-  specialist_follow_up?: string
+
   additional_observations?: string
   notes?: string
 }
