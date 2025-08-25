@@ -14,6 +14,7 @@ export const themes = {
     primaryColor: '#ea7317', // Orange
     logoImage: '/sigma.png',
     titleImage: '/sigma.png',
+    logoImageBase: '/sigma.png',
     altText: 'SIGMA - Sistema Integral de Gestión Municipal',
     description: 'Sistema integral de gestión de servicios municipales'
   },
@@ -22,14 +23,16 @@ export const themes = {
     primaryColor: '#004e81', // Blue
     logoImage: '/hosp-logo.png',
     titleImage: '/hosp-title-wh.png',
+    titleImageBase: '/hosp-title.png',
     altText: 'Hospital General de Real',
     description: 'Gestión de pacientes y servicios médicos'
   },
   police: {
     name: 'Policía',
     primaryColor: '#810000', // Red
-    logoImage: '/policia.png',
+    logoImage: '/police-logo.png',
     titleImage: '/police-title-wh.png',
+    titleImageBase: '/police-title.png',
     altText: 'Policía Nacional',
     description: 'Verificación y consulta de certificados'
   }

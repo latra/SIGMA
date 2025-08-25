@@ -177,7 +177,7 @@ export default function RegistrationForm() {
           />
           <img
             className="mx-auto h-12 w-auto"
-            src={formData.userType === 'police' ? themes.police.titleImage : themes.hospital.titleImage}
+            src={formData.userType === 'police' ? themes.police.titleImageBase : themes.hospital.titleImageBase}
             alt={formData.userType === 'police' ? themes.police.altText : themes.hospital.altText}
           />
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
