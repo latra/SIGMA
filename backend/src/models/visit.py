@@ -14,7 +14,7 @@ class VitalSigns(BaseModel):
     """Signos vitales del paciente durante la visita"""
     measurement_id: str = Field(default_factory=lambda: str(uuid4()), description="ID único de la medición")
     measured_at: datetime = Field(default_factory=datetime.now, description="Fecha y hora de la medición")
-    heart_rate: Optional[int] = Field(None, ge=30, le=300, description="Frecuencia cardíaca (bpm)")
+    heart_rate: Optional[int] = Field(None, description="Frecuencia cardíaca (bpm)")
     systolic_pressure: Optional[str] = Field(None, description="Presión sistólica (mmHg)")
     diastolic_pressure: Optional[str] = Field(None, description="Presión diastólica (mmHg)")
     temperature: Optional[str] = Field(None, description="Temperatura corporal (°C)")

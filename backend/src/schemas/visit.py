@@ -9,7 +9,7 @@ from typing import Optional, List
 
 class VitalSignsBase(BaseModel):
     """Esquema base para signos vitales"""
-    heart_rate: Optional[int] = Field(None, ge=30, le=300, description="Frecuencia cardíaca (bpm)")
+    heart_rate: Optional[int] = Field(None, description="Frecuencia cardíaca (bpm)")
     systolic_pressure: Optional[str] = Field(None, description="Presión sistólica (mmHg)")
     diastolic_pressure: Optional[str] = Field(None, description="Presión diastólica (mmHg)")
     temperature: Optional[str] = Field(None, description="Temperatura corporal (°C)")
@@ -109,10 +109,10 @@ class VisitCreate(VisitBase):
     priority_level: int = Field(default=3, ge=1, le=5, description="Nivel de prioridad (1=máxima, 5=mínima)")
     
     # Signos vitales de admisión (campos compatibles con API actual)
-    admission_heart_rate: Optional[int] = Field(None, ge=30, le=300, description="Frecuencia cardíaca de admisión")
+    admission_heart_rate: Optional[int] = Field(None, description="Frecuencia cardíaca de admisión")
     admission_blood_pressure: Optional[str] = Field(None, description="Presión arterial de admisión")
-    admission_temperature: Optional[float] = Field(None, ge=30.0, le=45.0, description="Temperatura de admisión")
-    admission_oxygen_saturation: Optional[int] = Field(None, ge=70, le=100, description="Saturación de oxígeno de admisión")
+    admission_temperature: Optional[float] = Field(None, description="Temperatura de admisión")
+    admission_oxygen_saturation: Optional[int] = Field(None, description="Saturación de oxígeno de admisión")
     admission_status: Optional[PatientStatus] = Field(None, description="Estado del paciente en admisión")
 
 
@@ -124,10 +124,10 @@ class VisitUpdate(BaseModel):
     priority_level: Optional[int] = Field(None, ge=1, le=5, description="Nivel de prioridad")
     
     # Campos compatibles con API actual
-    admission_heart_rate: Optional[int] = Field(None, ge=30, le=300, description="Frecuencia cardíaca")
+    admission_heart_rate: Optional[int] = Field(None, description="Frecuencia cardíaca")
     admission_blood_pressure: Optional[str] = Field(None, description="Presión arterial")
-    admission_temperature: Optional[float] = Field(None, ge=30.0, le=45.0, description="Temperatura")
-    admission_oxygen_saturation: Optional[int] = Field(None, ge=70, le=100, description="Saturación de oxígeno")
+    admission_temperature: Optional[float] = Field(None, description="Temperatura")
+    admission_oxygen_saturation: Optional[int] = Field(None, description="Saturación de oxígeno")
     
     # Información médica básica (compatibilidad con API actual)
     diagnosis: Optional[str] = Field(None, description="Diagnóstico principal")
