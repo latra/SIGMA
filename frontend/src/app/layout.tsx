@@ -16,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hospital General de Real - Gestión de pacientes y admisiones",
-  description: "Gestión de pacientes y admisiones para el Hospital General de Real (REAL RP | GTA V)",
+  title: "SIGMA - Sistema Integral de Gestión Municipal",
+  description: "Sistema integral de gestión de servicios municipales - Hospital, Policía y más servicios ciudadanos",
   icons: {
-    icon: '/hosp-logo.png',
+    icon: '/sigma.png',
   },
 };
 

@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '../firebase/config'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext'
+import { getThemeByRoute, themes } from '../../lib/theme-config'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -12,6 +13,11 @@ export default function LoginForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { signIn } = useAuth();
+  const pathname = usePathname()
+  
+  // Use theme based on current route, default to SIGMA
+  const currentTheme = getThemeByRoute(pathname)
+  const theme = themes[currentTheme]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,14 +48,15 @@ export default function LoginForm() {
         <div>
         <img
             className="mx-auto h-24 w-auto"
-            src="/hosp-logo.png"
-            alt="Hospital General de Real"
+            src={theme.logoImage}
+            alt={theme.altText}
           />
-          <img
-            className="mx-auto h-12 w-auto"
-            src="/hosp-title.png"
-            alt="Hospital General de Real"
-          />
+          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+            Iniciar Sesión
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            {theme.description}
+          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
@@ -103,7 +110,13 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-hospital-blue hover:bg-hospital-blue/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4fbbeb] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{ 
+                backgroundColor: theme.primaryColor, 
+                focusRingColor: theme.primaryColor + '80'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.primaryColor + 'cc'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.primaryColor}
             >
               {loading ? (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -120,7 +133,8 @@ export default function LoginForm() {
               ¿No tienes una cuenta?{' '}
               <a
                 href="/register"
-                className="font-medium text-hospital-blue hover:text-hospital-blue/80"
+                className="font-medium hover:underline transition-colors"
+                style={{ color: theme.primaryColor }}
               >
                 Registrarse como médico o policía
               </a>

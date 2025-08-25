@@ -8,7 +8,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-sigma-orange: #ea7317;
+  --color-sigma-orange-light: #f59e0b;
+  --color-sigma-orange-dark: #d97706;
   --color-hospital-blue: #004e81;
+  --color-hospital-blue-light: #0066cc;
+  --color-police-red: #810000;
+  --color-police-red-light: #dc2626;
   --color-focus-blue: #4fbbeb;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
