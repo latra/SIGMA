@@ -106,9 +106,9 @@ export default function LoginForm() {
                   <h3 className="text-sm font-medium text-green-800">
                     ¡Correo enviado exitosamente!
                   </h3>
-                  <div className="mt-2 text-sm text-green-700">
-                    <p>Hemos enviado un enlace de recuperación a <strong>{email}</strong>. Revisa tu bandeja de entrada y sigue las instrucciones.</p>
-                  </div>
+                                      <div className="mt-2 text-sm text-green-700">
+                      <p>Hemos enviado un enlace de recuperación a <strong>{email}</strong>. Revisa tu bandeja de entrada (y la carpeta de spam por si acaso) y sigue las instrucciones para restablecer tu contraseña.</p>
+                    </div>
                 </div>
               </div>
             </div>
