@@ -140,11 +140,11 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
               type={showCurrentPassword ? 'text' : 'password'}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors ${error && !currentPassword ? 'border-red-500' : 'border-gray-300'}`}
               style={{ 
-                focusRingColor: theme.primaryColor,
-                borderColor: error && !currentPassword ? '#ef4444' : undefined
-              }}
+                borderColor: error && !currentPassword ? '#ef4444' : undefined,
+                '--tw-ring-color': theme.primaryColor
+              } as React.CSSProperties}
               placeholder="Ingresa tu contraseña actual"
               disabled={loading}
               required
@@ -175,11 +175,11 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
               type={showNewPassword ? 'text' : 'password'}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors ${error && !newPassword ? 'border-red-500' : 'border-gray-300'}`}
               style={{ 
-                focusRingColor: theme.primaryColor,
-                borderColor: error && !newPassword ? '#ef4444' : undefined
-              }}
+                borderColor: error && !newPassword ? '#ef4444' : undefined,
+                '--tw-ring-color': theme.primaryColor
+              } as React.CSSProperties}
               placeholder="Ingresa tu nueva contraseña"
               disabled={loading}
               required
@@ -230,11 +230,11 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
               type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-colors ${error && !confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
               style={{ 
-                focusRingColor: theme.primaryColor,
-                borderColor: error && !confirmPassword ? '#ef4444' : undefined
-              }}
+                borderColor: error && !confirmPassword ? '#ef4444' : undefined,
+                '--tw-ring-color': theme.primaryColor
+              } as React.CSSProperties}
               placeholder="Confirma tu nueva contraseña"
               disabled={loading}
               required
@@ -280,8 +280,8 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
             className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ 
               backgroundColor: theme.primaryColor,
-              focusRingColor: theme.primaryColor
-            }}
+              '--tw-ring-color': theme.primaryColor
+            } as React.CSSProperties}
           >
             {loading ? 'Cambiando...' : 'Cambiar Contraseña'}
           </button>
