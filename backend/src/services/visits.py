@@ -315,9 +315,7 @@ class VisitService:
             admission_date=visit_db.admission_date,
             discharge_date=visit_db.discharge_date,
             doctor_dni=visit_db.attending_doctor_dni,
-            doctor_name=doctor_info.name if doctor_info else "Unknown",
-            doctor_email=doctor_info.email if doctor_info else None,
-            doctor_specialty=doctor_info.specialty if doctor_info else None,
+            doctor_name= visit_db.attending_doctor_name,
             diagnosis=diagnosis_text,
             procedures=visit_db.procedures if visit_db.procedures else None,
             treatment=getattr(visit_db, 'treatment', None),
@@ -413,6 +411,9 @@ class VisitService:
             triage=visit_db.triage,
             priority_level=visit_db.priority_level,
             attending_doctor_dni=visit_db.attending_doctor_dni,
+            attending_doctor_name=getattr(visit_db, 'attending_doctor_name', None),
+            attending_doctor_email=getattr(visit_db, 'attending_doctor_email', None),
+            attending_doctor_specialty=getattr(visit_db, 'attending_doctor_specialty', None),
             admission_vital_signs=admission_vital_signs,
             diagnoses=diagnoses,
             procedures=procedures,
@@ -481,6 +482,7 @@ class VisitService:
                 triage=visit_create.triage,
                 priority_level=visit_create.priority_level,
                 attending_doctor_dni=doctor.dni,
+                attending_doctor_name=doctor.name,
                 admission_vital_signs=admission_vital_signs,
                 created_by=doctor.dni,
 
@@ -605,7 +607,13 @@ class VisitService:
         summaries = []
         
         for visit_db in visits_db:
-            doctor_info = self.doctor_service.get_doctor(visit_db.attending_doctor_dni)
+            # Usar información del médico guardada en la visita, evitando queries adicionales
+            doctor_name = getattr(visit_db, 'attending_doctor_name', None)
+            
+            # Fallback solo si no existe la información guardada (para compatibilidad con visitas viejas)
+            if not doctor_name:
+                doctor_info = self.doctor_service.get_doctor(visit_db.attending_doctor_dni)
+                doctor_name = doctor_info.name if doctor_info else "Unknown"
             
             summary = VisitSummary(
                 visit_id=visit_db.visit_id,
@@ -617,9 +625,7 @@ class VisitService:
                 location=visit_db.location,
                 triage=visit_db.triage,
                 doctor_dni=visit_db.attending_doctor_dni,
-                doctor_name=doctor_info.name if doctor_info else "Unknown",
-                doctor_email=doctor_info.email if doctor_info else None,
-                doctor_specialty=doctor_info.specialty if doctor_info else None,
+                doctor_name=doctor_name,
                 admission_date=visit_db.admission_date,
                 discharge_date=visit_db.discharge_date,
                 date_of_admission=visit_db.admission_date,  # Para compatibilidad
@@ -634,9 +640,10 @@ class VisitService:
         visits_db = self.repository.get_by_doctor_dni(doctor_dni)
         visits = []
         
-        doctor_info = self.doctor_service.get_doctor(doctor_dni)
+        # No necesitamos hacer una query adicional ya que la información del doctor 
+        # está guardada en cada visita
         for visit_db in visits_db:
-            visit = self._visit_db_to_visit(visit_db, doctor_info)
+            visit = self._visit_db_to_visit(visit_db)
             if visit:
                 visits.append(visit)
         return visits

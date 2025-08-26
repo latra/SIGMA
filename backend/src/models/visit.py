@@ -96,6 +96,7 @@ class VisitDB(BaseModel):
     
     # Información del médico responsable
     attending_doctor_dni: str = Field(..., description="DNI del médico tratante")
+    attending_doctor_name: str = Field(..., description="Nombre del médico tratante")
     
     # Datos médicos estructurados
     admission_vital_signs: Optional[VitalSigns] = Field(None, description="Signos vitales de admisión")

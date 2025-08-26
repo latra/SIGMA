@@ -190,6 +190,7 @@ class VisitComplete(BaseModel):
     
     # Profesionales
     attending_doctor_dni: str = Field(..., description="DNI del médico tratante")
+    attending_doctor_name: Optional[str] = Field(None, description="Nombre del médico tratante")
     
     # Datos médicos estructurados
     admission_vital_signs: Optional[VitalSignsResponse] = Field(None, description="Signos vitales de admisión")
