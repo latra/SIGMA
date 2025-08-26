@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User as FirebaseUser, createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth'
+import { User as FirebaseUser, createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, sendPasswordResetEmail } from 'firebase/auth'
 import { auth } from '../firebase/config'
 import { getCurrentUser, getCurrentDoctor, getCurrentPolice, Doctor, User as SystemUser, PoliceUser } from '../../lib/api'
 import { handleAuthError } from '../../lib/auth-utils'
@@ -17,6 +17,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
+  resetPassword: (email: string) => Promise<void>
   // Legacy compatibility
   user: FirebaseUser | null
 }
@@ -190,6 +191,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email)
+      console.log('Email de recuperación enviado exitosamente')
+    } catch (error: any) {
+      console.error('Error sending password reset email:', error)
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No se encontró una cuenta con este correo electrónico')
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('El correo electrónico no es válido')
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Demasiados intentos. Espera un momento antes de intentar nuevamente')
+      } else {
+        throw new Error('Error al enviar el correo de recuperación. Inténtalo de nuevo.')
+      }
+    }
+  }
+
   const value = {
     firebaseUser,
     systemUser,
@@ -200,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     changePassword,
+    resetPassword,
     // Legacy compatibility
     user: firebaseUser
   }

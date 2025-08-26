@@ -215,7 +215,7 @@ export default function Home() {
             {/* Créditos */}
             <div className="mb-6">
               <p className="text-gray-300 mb-2 font-medium">
-                Desarrollado por
+                Desarrollado con ❤️ por
               </p>
               <p className="text-gray-400 text-sm">
                 Paula "Latra" Gallucci y "Raudive"
@@ -238,7 +238,7 @@ export default function Home() {
             </div>
             
             <p className="text-sm text-gray-500">
-              © 2024 SIGMA. Todos los derechos reservados.
+              © 2025 SIGMA. Todos los derechos reservados.
             </p>
           </div>
         </div>
