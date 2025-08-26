@@ -385,19 +385,6 @@ export default function VisitDetails({ visitId, isOpen, onClose, onVisitUpdate, 
               <ChartBarIcon className="h-4 w-4 inline mr-2" />
               Evolución
             </button>
-            {currentVisit.visit_status === 'discharge' && (
-              <button
-                onClick={() => setActiveTab('discharge')}
-                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'discharge'
-                    ? 'border-hospital-blue text-hospital-blue'
-                    : 'border-transparent text-gray-900 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <ClockIcon className="h-4 w-4 inline mr-2" />
-                Alta
-              </button>
-            )}
           </div>
         </div>
 
