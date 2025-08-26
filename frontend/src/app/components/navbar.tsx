@@ -1,6 +1,6 @@
 'use client'
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { Bars3Icon, XMarkIcon, DocumentCheckIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, DocumentCheckIcon, KeyIcon } from '@heroicons/react/24/outline'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '../contexts/AuthContext'
@@ -128,17 +128,27 @@ export default function Navbar() {
                             )}
                             {isPolice && police?.rank && (
                               <div className="text-gray-500">Rango: {police.rank}</div>
-                            )}
-                            <div className="text-xs text-gray-400 mt-1">
-                              {isPolice ? 'Policía' : 'Médico'}
-                            </div>
-                          </div>
-                        </MenuItem>
-                        <div className="border-t border-gray-100 my-1"></div>
-                      </>
-                    )}
+                                                )}
+                    <div className="text-xs text-gray-400 mt-1">
+                      {isPolice ? 'Policía' : 'Médico'}
+                    </div>
+                  </div>
+                </MenuItem>
+                <div className="border-t border-gray-100 my-1"></div>
+              </>
+            )}
 
-                    <MenuItem>
+            <MenuItem>
+              <Link
+                href="/change-password"
+                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden hover:bg-gray-100 transition-colors"
+              >
+                <KeyIcon className="mr-3 h-4 w-4" />
+                Cambiar contraseña
+              </Link>
+            </MenuItem>
+
+            <MenuItem>
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
