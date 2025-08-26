@@ -31,6 +31,15 @@ export default function PatientDetails({ patient, isOpen, onClose, onPatientUpda
   // Form states
   const [basicInfo, setBasicInfo] = useState<PatientUpdate>({})
   const [medicalHistory, setMedicalHistory] = useState<PatientMedicalHistoryUpdate>({})
+  // Temporary string states for better user experience while editing
+  const [medicalHistoryStrings, setMedicalHistoryStrings] = useState({
+    allergies: '',
+    major_surgeries: '',
+    current_medications: '',
+    chronic_conditions: '',
+    family_history: '',
+    medical_notes: ''
+  })
   const [newBloodAnalysis, setNewBloodAnalysis] = useState<BloodAnalysisCreate | null>(null)
   const [newRadiologyStudy, setNewRadiologyStudy] = useState<RadiologyStudyCreate | null>(null)
   const [showBloodAnalysisForm, setShowBloodAnalysisForm] = useState(false)
@@ -70,6 +79,16 @@ export default function PatientDetails({ patient, isOpen, onClose, onPatientUpda
         current_medications: completeData.medical_history.current_medications,
         chronic_conditions: completeData.medical_history.chronic_conditions,
         family_history: completeData.medical_history.family_history
+      })
+      
+      // Initialize string states for better editing experience
+      setMedicalHistoryStrings({
+        allergies: arrayToString(completeData.medical_history.allergies),
+        major_surgeries: arrayToString(completeData.medical_history.major_surgeries),
+        current_medications: arrayToString(completeData.medical_history.current_medications),
+        chronic_conditions: arrayToString(completeData.medical_history.chronic_conditions),
+        family_history: completeData.medical_history.family_history || '',
+        medical_notes: completeData.medical_history.medical_notes || ''
       })
     } catch (error) {
       console.error('Error fetching complete patient data:', error)
@@ -194,7 +213,17 @@ export default function PatientDetails({ patient, isOpen, onClose, onPatientUpda
 
     setIsLoading(true)
     try {
-      await updatePatientMedicalHistory(patient.dni, medicalHistory)
+      // Convert strings to arrays before sending to API
+      const medicalHistoryData: PatientMedicalHistoryUpdate = {
+        allergies: stringToArray(medicalHistoryStrings.allergies),
+        major_surgeries: stringToArray(medicalHistoryStrings.major_surgeries),
+        current_medications: stringToArray(medicalHistoryStrings.current_medications),
+        chronic_conditions: stringToArray(medicalHistoryStrings.chronic_conditions),
+        family_history: medicalHistoryStrings.family_history || undefined,
+        medical_notes: medicalHistoryStrings.medical_notes || undefined
+      }
+      
+      await updatePatientMedicalHistory(patient.dni, medicalHistoryData)
       await fetchPatientComplete()
       alert('Historial médico actualizado correctamente')
     } catch (error) {
@@ -648,8 +677,8 @@ export default function PatientDetails({ patient, isOpen, onClose, onPatientUpda
                       Alergias Conocidas
                     </label>
                     <textarea
-                      value={arrayToString(medicalHistory.allergies || [])}
-                      onChange={(e) => setMedicalHistory(prev => ({ ...prev, allergies: stringToArray(e.target.value) }))}
+                      value={medicalHistoryStrings.allergies}
+                      onChange={(e) => setMedicalHistoryStrings(prev => ({ ...prev, allergies: e.target.value }))}
                       rows={2}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                       placeholder="Separar con comas: polen, polvo, alimentos..."
@@ -662,8 +691,8 @@ export default function PatientDetails({ patient, isOpen, onClose, onPatientUpda
                       Cirugías Mayores
                     </label>
                     <textarea
-                      value={arrayToString(medicalHistory.major_surgeries || [])}
-                      onChange={(e) => setMedicalHistory(prev => ({ ...prev, major_surgeries: stringToArray(e.target.value) }))}
+                      value={medicalHistoryStrings.major_surgeries}
+                      onChange={(e) => setMedicalHistoryStrings(prev => ({ ...prev, major_surgeries: e.target.value }))}
                       rows={2}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                       placeholder="Separar con comas: apendicetomía 2020, bypass 2018..."
@@ -676,8 +705,8 @@ export default function PatientDetails({ patient, isOpen, onClose, onPatientUpda
                       Medicamentos Actuales
                     </label>
                     <textarea
-                      value={arrayToString(medicalHistory.current_medications || [])}
-                      onChange={(e) => setMedicalHistory(prev => ({ ...prev, current_medications: stringToArray(e.target.value) }))}
+                      value={medicalHistoryStrings.current_medications}
+                      onChange={(e) => setMedicalHistoryStrings(prev => ({ ...prev, current_medications: e.target.value }))}
                       rows={2}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                       placeholder="Separar con comas: aspirina 100mg, metformina 500mg..."
@@ -690,8 +719,8 @@ export default function PatientDetails({ patient, isOpen, onClose, onPatientUpda
                       Condiciones Crónicas
                     </label>
                     <textarea
-                      value={arrayToString(medicalHistory.chronic_conditions || [])}
-                      onChange={(e) => setMedicalHistory(prev => ({ ...prev, chronic_conditions: stringToArray(e.target.value) }))}
+                      value={medicalHistoryStrings.chronic_conditions}
+                      onChange={(e) => setMedicalHistoryStrings(prev => ({ ...prev, chronic_conditions: e.target.value }))}
                       rows={2}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                       placeholder="Separar con comas: diabetes tipo 2, hipertensión..."
@@ -704,8 +733,8 @@ export default function PatientDetails({ patient, isOpen, onClose, onPatientUpda
                       Historial Familiar
                     </label>
                     <textarea
-                      value={medicalHistory.family_history || ''}
-                      onChange={(e) => setMedicalHistory(prev => ({ ...prev, family_history: e.target.value }))}
+                      value={medicalHistoryStrings.family_history}
+                      onChange={(e) => setMedicalHistoryStrings(prev => ({ ...prev, family_history: e.target.value }))}
                       rows={3}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                       placeholder="Antecedentes médicos familiares relevantes..."
@@ -718,8 +747,8 @@ export default function PatientDetails({ patient, isOpen, onClose, onPatientUpda
                       Notas Médicas Generales
                     </label>
                     <textarea
-                      value={medicalHistory.medical_notes || ''}
-                      onChange={(e) => setMedicalHistory(prev => ({ ...prev, medical_notes: e.target.value }))}
+                      value={medicalHistoryStrings.medical_notes}
+                      onChange={(e) => setMedicalHistoryStrings(prev => ({ ...prev, medical_notes: e.target.value }))}
                       rows={4}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                       placeholder="Información médica adicional relevante..."
