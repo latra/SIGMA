@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User as FirebaseUser, createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import { User as FirebaseUser, createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, sendPasswordResetEmail } from 'firebase/auth'
 import { auth } from '../firebase/config'
 import { getCurrentUser, getCurrentDoctor, getCurrentPolice, Doctor, User as SystemUser, PoliceUser } from '../../lib/api'
 import { handleAuthError } from '../../lib/auth-utils'
@@ -16,6 +16,8 @@ interface AuthContextType {
   logout: () => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
+  resetPassword: (email: string) => Promise<void>
   // Legacy compatibility
   user: FirebaseUser | null
 }
@@ -156,6 +158,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!firebaseUser) {
+      throw new Error('No hay usuario autenticado')
+    }
+
+    try {
+      // Crear credenciales para la reautenticación
+      const credential = EmailAuthProvider.credential(
+        firebaseUser.email!,
+        currentPassword
+      )
+
+      // Reautenticar al usuario
+      await reauthenticateWithCredential(firebaseUser, credential)
+
+      // Cambiar la contraseña
+      await updatePassword(firebaseUser, newPassword)
+
+      console.log('Contraseña actualizada exitosamente')
+    } catch (error: any) {
+      console.error('Error changing password:', error)
+      if (error.code === 'auth/wrong-password') {
+        throw new Error('La contraseña actual es incorrecta')
+      } else if (error.code === 'auth/weak-password') {
+        throw new Error('La nueva contraseña es muy débil')
+      } else if (error.code === 'auth/requires-recent-login') {
+        throw new Error('Por seguridad, necesitas iniciar sesión nuevamente antes de cambiar tu contraseña')
+      } else {
+        throw new Error('Error al cambiar la contraseña. Inténtalo de nuevo.')
+      }
+    }
+  }
+
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email)
+      console.log('Email de recuperación enviado exitosamente')
+    } catch (error: any) {
+      console.error('Error sending password reset email:', error)
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No se encontró una cuenta con este correo electrónico')
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('El correo electrónico no es válido')
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Demasiados intentos. Espera un momento antes de intentar nuevamente')
+      } else {
+        throw new Error('Error al enviar el correo de recuperación. Inténtalo de nuevo.')
+      }
+    }
+  }
+
   const value = {
     firebaseUser,
     systemUser,
@@ -165,6 +218,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     signIn,
     signUp,
+    changePassword,
+    resetPassword,
     // Legacy compatibility
     user: firebaseUser
   }
