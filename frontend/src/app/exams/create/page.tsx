@@ -292,19 +292,10 @@ export default function CreateExamPage() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-medium text-gray-900">Categorías y Preguntas</h2>
-                <button
-                  type="button"
-                  onClick={addCategory}
-                  className="flex items-center px-3 py-2 text-white rounded-md hover:opacity-80 transition-colors"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Añadir Categoría
-                </button>
               </div>
 
               {examData.categories.map((category, categoryIndex) => (
-                <div key={`category-${categoryIndex}-${category.name || 'new'}`} className="bg-white shadow-sm rounded-lg p-6">
+                <div key={category.category_id} className="bg-white shadow-sm rounded-lg p-6">
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="text-md font-medium text-gray-900">
                       Categoría {categoryIndex + 1}
@@ -353,19 +344,10 @@ export default function CreateExamPage() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h4 className="text-sm font-medium text-gray-700">Preguntas</h4>
-                      <button
-                        type="button"
-                        onClick={() => addQuestion(categoryIndex)}
-                        className="flex items-center px-2 py-1 text-sm text-white rounded hover:opacity-80"
-                        style={{ backgroundColor: themeColor }}
-                      >
-                        <PlusIcon className="h-4 w-4 mr-1" />
-                        Añadir Pregunta
-                      </button>
                     </div>
 
                     {category.questions.map((question, questionIndex) => (
-                      <div key={`question-${categoryIndex}-${questionIndex}-${question.question.slice(0, 20) || 'new'}`} className="border border-gray-200 rounded-md p-4">
+                      <div key={question.question_id} className="border border-gray-200 rounded-md p-4">
                         <div className="flex justify-between items-start mb-3">
                           <span className="text-sm font-medium text-gray-700">
                             Pregunta {questionIndex + 1}
@@ -402,7 +384,7 @@ export default function CreateExamPage() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {question.options.map((option, optionIndex) => (
                               <input
-                                key={`option-input-${categoryIndex}-${questionIndex}-${optionIndex}`}
+                                key={`${question.question_id}-option-${optionIndex}`}
                                 type="text"
                                 placeholder={`Opción ${optionIndex + 1}`}
                                 value={option}
@@ -428,7 +410,7 @@ export default function CreateExamPage() {
                           >
                             <option value="">Seleccionar respuesta correcta</option>
                             {question.options.map((option, optionIndex) => (
-                              <option key={`option-select-${categoryIndex}-${questionIndex}-${optionIndex}`} value={option}>
+                              <option key={`${question.question_id}-select-${optionIndex}`} value={option}>
                                 {option || `Opción ${optionIndex + 1}`}
                               </option>
                             ))}
@@ -436,9 +418,29 @@ export default function CreateExamPage() {
                         </div>
                       </div>
                     ))}
+                    
+                    <button
+                      type="button"
+                      onClick={() => addQuestion(categoryIndex)}
+                      className="flex items-center px-2 py-1 text-sm text-white rounded hover:opacity-80"
+                      style={{ backgroundColor: themeColor }}
+                    >
+                      <PlusIcon className="h-4 w-4 mr-1" />
+                      Añadir Pregunta
+                    </button>
                   </div>
                 </div>
               ))}
+              
+              <button
+                type="button"
+                onClick={addCategory}
+                className="flex items-center px-3 py-2 text-white rounded-md hover:opacity-80 transition-colors"
+                style={{ backgroundColor: themeColor }}
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Añadir Categoría
+              </button>
             </div>
 
             {/* Submit Button */}
