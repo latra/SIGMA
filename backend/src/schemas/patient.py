@@ -133,7 +133,7 @@ class PatientSummary(BaseModel):
     sex: Gender = Field(..., description="Género del paciente")
     blood_type: BloodType = Field(..., description="Tipo de sangre del paciente")
     last_visit: Optional[datetime] = Field(None, description="Fecha de última visita")
-
+    allergies: List[str] = Field(..., description="Alergias del paciente")
 
 class PatientAdmitted(BaseModel):
     """Esquema para pacientes admitidos"""

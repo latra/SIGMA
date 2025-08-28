@@ -105,6 +105,7 @@ export default function PatientsTable({ onPatientDetails, refreshTrigger, onPati
   }
 
   const formatAllergies = (allergies: string[]) => {
+    if (!allergies) return 'Undefined'
     if (allergies.length === 0) return 'Ninguna'
     if (allergies.length === 1) return allergies[0]
     return `${allergies[0]} +${allergies.length - 1}`
@@ -238,6 +239,9 @@ export default function PatientsTable({ onPatientDetails, refreshTrigger, onPati
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                       {patient.blood_type}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatAllergies(patient.allergies)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(patient.last_visit)}

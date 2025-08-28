@@ -327,7 +327,8 @@ export interface PatientSummary {
   age: number
   sex: Gender
   blood_type: BloodType
-  last_visit?: string
+  last_visit?: string,
+  allergies?: string[]
 }
 
 export interface PatientCreate {
