@@ -445,6 +445,7 @@ class PatientService:
                 age=patient_db.age,
                 sex=patient_db.sex,
                 blood_type=patient_db.blood_type,
+                allergies=patient_db.medical_history.allergies,
                 last_visit=None  # TODO: Implementar consulta de última visita
             ))
         
