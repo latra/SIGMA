@@ -97,6 +97,45 @@ class UserRepository(FirestoreService):
             logger.error(f"Error updating user {user_db.dni}: {e}")
             return False
     
+    def update_doctor(self, doctor_db: DoctorDB) -> bool:
+        """Actualiza un perfil de doctor existente"""
+        try:
+            doctor_dict = doctor_db.model_dump()
+            self.db.collection(self.doctors_collection).document(doctor_db.user_id).set(doctor_dict)
+            logger.info(f"Doctor {doctor_db.user_id} updated successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating doctor {doctor_db.user_id}: {e}")
+            return False
+    
+    def update_police(self, police_db: PoliceDB) -> bool:
+        """Actualiza un perfil de policía existente"""
+        try:
+            police_dict = police_db.model_dump()
+            self.db.collection(self.police_collection).document(police_db.user_id).set(police_dict)
+            logger.info(f"Police {police_db.user_id} updated successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating police {police_db.user_id}: {e}")
+            return False
+    def get_doctor_profile(self, user_id: str) -> Optional[DoctorDB]:
+        """Obtiene el perfil específico de doctor"""
+        try:
+            docs = self.db.collection(self.doctors_collection).where("user_id", "==", user_id).get()
+            if docs:
+                data = docs[0].to_dict()
+                return DoctorDB(**data)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting doctor profile for user {user_id}: {e}")
+            return None
+            
+            self.db.collection(self.police_collection).document(police_db.user_id).set(police_dict)
+            logger.info(f"Police {police_db.user_id} updated successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating police {police_db.user_id}: {e}")
+            return False
     def get_doctor_profile(self, user_id: str) -> Optional[DoctorDB]:
         """Obtiene el perfil específico de doctor"""
         try:
@@ -214,7 +253,8 @@ class UserService:
             specialty=doctor_profile.specialty if doctor_profile else None,
             medical_license=doctor_profile.medical_license if doctor_profile else None,
             institution=doctor_profile.institution if doctor_profile else None,
-            years_experience=doctor_profile.years_experience if doctor_profile else None
+            years_experience=doctor_profile.years_experience if doctor_profile else None,
+            roles=doctor_profile.roles if doctor_profile and doctor_profile.roles else []
         )
     
     def get_police_by_firebase_uid(self, firebase_uid: str) -> Optional[Police]:
@@ -453,3 +493,71 @@ class UserService:
         if len(dni) < 6:
             return dni.zfill(6)
         return dni
+    
+    def update_user_roles(self, firebase_uid: str, profile_type: str, roles: List[str]) -> bool:
+        """Actualiza los roles adicionales de un usuario"""
+        try:
+            if profile_type == "doctor":
+                doctor = self.get_doctor_by_firebase_uid(firebase_uid)
+                doctor.roles = roles
+                self.repository.update_doctor(doctor)
+                return True
+            elif profile_type == "police":
+                police = self.get_police_by_firebase_uid(firebase_uid)
+                police.roles = roles
+                self.repository.update_police(police)
+                return True
+            
+            return False
+        except Exception as e:
+            logger.error(f"Error updating user roles: {e}")
+            return False
+    
+    def get_users_with_role(self, role: str) -> List[User]:
+        """Obtiene todos los usuarios que tienen un rol específico"""
+        try:
+            users_with_role = []
+            
+            # Buscar en doctores
+            try:
+                doctor_docs = self.repository.db.collection(self.repository.doctors_collection).where("roles", "array_contains", role).get()
+                for doc in doctor_docs:
+                    doctor_data = doc.to_dict()
+                    user_id = doctor_data.get("user_id")
+                    if user_id:
+                        user = self.get_user_by_firebase_uid(user_id)
+                        if user:
+                            users_with_role.append(user)
+            except Exception as e:
+                logger.warning(f"Error searching doctors with role {role}: {e}")
+            
+            # Buscar en policías
+            try:
+                police_docs = self.repository.db.collection(self.repository.police_collection).where("roles", "array_contains", role).get()
+                for doc in police_docs:
+                    police_data = doc.to_dict()
+                    user_id = police_data.get("user_id")
+                    if user_id:
+                        user = self.get_user_by_firebase_uid(user_id)
+                        if user:
+                            users_with_role.append(user)
+            except Exception as e:
+                logger.warning(f"Error searching police with role {role}: {e}")
+            
+            return users_with_role
+        except Exception as e:
+            logger.error(f"Error getting users with role {role}: {e}")
+            return []
+    
+    def get_user_by_dni(self, dni: str) -> Optional[User]:
+        """Obtiene un usuario por DNI"""
+        try:
+            # Buscar en la colección de usuarios por DNI
+            user_docs = self.repository.db.collection(self.repository.users_collection).where("dni", "==", dni).get()
+            if user_docs:
+                user_data = user_docs[0].to_dict()
+                return User(**user_data)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting user by DNI {dni}: {e}")
+            return None

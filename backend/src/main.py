@@ -9,6 +9,8 @@ from routers.visit import visit_router
 from routers.doctor import doctor_router
 from routers.user import user_router
 from routers.police import police_router
+from routers.recruitment import recruitment_router
+from routers.admin import admin_router
 from fastapi.middleware.cors import CORSMiddleware
 from routers.exams import exam_router
 from services.firestore_indexes import firestore_index_service
@@ -58,4 +60,6 @@ app.include_router(visit_router)
 app.include_router(doctor_router)
 app.include_router(user_router)
 app.include_router(police_router)
+app.include_router(recruitment_router)
+app.include_router(admin_router)
 app.include_router(exam_router)

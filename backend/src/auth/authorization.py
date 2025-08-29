@@ -214,6 +214,34 @@ def require_exam_admin():
     """Requiere permisos de administrador para gestionar exámenes"""
     return require_admin()
 
+def require_doctor_recruiter() -> Doctor:
+    """Requiere que el usuario sea doctor con rol recruiter"""
+    async def verify(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Doctor:
+        doctor = await auth_service.verify_doctor(credentials)
+        # Compatibilidad hacia atrás: si roles no existe o es None, asumir array vacío
+        user_roles = getattr(doctor, 'roles', None) or []
+        if "recruiter" not in user_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Recruiter role required for medical recruitment management"
+            )
+        return doctor
+    return Depends(verify)
+
+def require_police_recruiter() -> Police:
+    """Requiere que el usuario sea policía con rol recruiter"""
+    async def verify(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Police:
+        police = await auth_service.verify_police(credentials)
+        # Compatibilidad hacia atrás: si roles no existe o es None, asumir array vacío
+        user_roles = getattr(police, 'roles', None) or []
+        if "recruiter" not in user_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Recruiter role required for police recruitment management"
+            )
+        return police
+    return Depends(verify)
+
 
 # Compatibilidad hacia atrás con el sistema anterior
 class FirebaseAuthCompatibility:

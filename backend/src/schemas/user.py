@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from schemas.enums import UserRole
 
 
@@ -48,6 +48,12 @@ class DoctorProfile(BaseModel):
     can_prescribe: bool = Field(True, description="Puede prescribir medicamentos")
     can_diagnose: bool = Field(True, description="Puede realizar diagnósticos")
     can_perform_procedures: bool = Field(True, description="Puede realizar procedimientos médicos")
+    roles: List[str] = Field(default_factory=list, description="Roles adicionales del doctor (ej: recruiter)")
+    
+    @validator('roles', pre=True)
+    def validate_roles(cls, v):
+        """Compatibilidad hacia atrás: convertir None a lista vacía"""
+        return v if v is not None else []
 
 
 class DoctorCreate(UserCreate):
@@ -80,6 +86,12 @@ class Doctor(User):
     medical_license: Optional[str] = Field(None, description="Número de licencia médica")
     institution: Optional[str] = Field(None, description="Institución médica")
     years_experience: Optional[int] = Field(None, description="Años de experiencia")
+    roles: List[str] = Field(default_factory=list, description="Roles adicionales del doctor (ej: recruiter)")
+    
+    @validator('roles', pre=True)
+    def validate_roles_doctor(cls, v):
+        """Compatibilidad hacia atrás: convertir None a lista vacía"""
+        return v if v is not None else []
 
 
 # Esquemas específicos para policías
@@ -94,6 +106,12 @@ class PoliceProfile(BaseModel):
     can_arrest: bool = Field(True, description="Puede realizar arrestos")
     can_investigate: bool = Field(True, description="Puede realizar investigaciones")
     can_access_medical_info: bool = Field(False, description="Puede acceder a información médica limitada")
+    roles: List[str] = Field(default_factory=list, description="Roles adicionales del policía (ej: recruiter)")
+    
+    @validator('roles', pre=True)
+    def validate_roles_police_profile(cls, v):
+        """Compatibilidad hacia atrás: convertir None a lista vacía"""
+        return v if v is not None else []
 
 
 class PoliceCreate(UserCreate):
@@ -128,6 +146,12 @@ class Police(User):
     department: Optional[str] = Field(None, description="Departamento policial")
     station: Optional[str] = Field(None, description="Estación asignada")
     years_service: Optional[int] = Field(None, description="Años de servicio")
+    roles: List[str] = Field(default_factory=list, description="Roles adicionales del policía (ej: recruiter)")
+    
+    @validator('roles', pre=True)
+    def validate_roles_police(cls, v):
+        """Compatibilidad hacia atrás: convertir None a lista vacía"""
+        return v if v is not None else []
 
 
 # Esquemas para filtros y búsquedas
@@ -179,3 +203,9 @@ class DoctorLegacy(BaseModel):
     enabled: bool = Field(..., description="Estado del doctor")
     is_admin: Optional[bool] = Field(None, description="Si es administrador")
     firebase_uid: Optional[str] = Field(None, description="UID de Firebase")
+    roles: List[str] = Field(default_factory=list, description="Roles adicionales del doctor (ej: recruiter)")
+    
+    @validator('roles', pre=True)
+    def validate_roles_legacy(cls, v):
+        """Compatibilidad hacia atrás: convertir None a lista vacía"""
+        return v if v is not None else []

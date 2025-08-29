@@ -22,6 +22,15 @@ export default function Home() {
 
   const services = [
     {
+      title: 'Gestión de Reclutamiento',
+      description: 'Administración de solicitudes de reclutamiento médico',
+      icon: UserGroupIcon,
+      color: '#004e81',
+      href: '/recruitment/manage',
+      available: userRole === 'doctor' && doctor?.roles?.includes('recruiter'),
+      authRequired: true,
+    },
+    {
       title: 'Gestión Hospitalaria',
       description: 'Administración de pacientes, admisiones y servicios médicos',
       icon: HeartIcon,
@@ -112,6 +121,22 @@ export default function Home() {
                 </div>
               )}
             </div>
+            
+            {/* Enlace prominente de reclutamiento */}
+            {!user && (
+              <div className="mt-8">
+                <Link
+                  href="/recruitment"
+                  className="inline-flex items-center px-12 py-4 text-lg font-bold rounded-lg text-white shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                >
+                  <UserGroupIcon className="w-6 h-6 mr-3" />
+                  ¡Únete a nuestro equipo!
+                </Link>
+                <p className="text-sm text-gray-600 mt-2">
+                  ¿Eres médico o policía? Solicita unirte a SIGMA
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

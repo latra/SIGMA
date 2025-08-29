@@ -1,10 +1,12 @@
 'use client'
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { Bars3Icon, XMarkIcon, DocumentCheckIcon, KeyIcon } from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon, DocumentCheckIcon, KeyIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '../contexts/AuthContext'
 import { getThemeByRoute, themes, getNavigationForUser, type ThemeType } from '../../lib/theme-config'
+import { useEffect, useState } from 'react'
+import { getPendingMedicalRecruitments } from '../../lib/api'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
@@ -14,6 +16,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { user, systemUser, doctor, police, logout } = useAuth();
+  const [pendingRecruitments, setPendingRecruitments] = useState(0)
 
   // Determine current theme based on route
   const currentTheme: ThemeType = getThemeByRoute(pathname)
@@ -23,6 +26,25 @@ export default function Navbar() {
   const userRole = systemUser?.role || (doctor ? 'doctor' : (police ? 'police' : null))
   const isAdmin = systemUser?.is_admin || doctor?.is_admin || police?.is_admin || false
   const currentUser = doctor || police
+  const isRecruiter = userRole === 'doctor' && isAdmin
+
+  // Check for pending recruitments
+  useEffect(() => {
+    if (isRecruiter) {
+      const checkPendingRecruitments = async () => {
+        try {
+          const recruitments = await getPendingMedicalRecruitments()
+          setPendingRecruitments(recruitments.length)
+        } catch (error) {
+          console.error('Error fetching pending recruitments:', error)
+        }
+      }
+      checkPendingRecruitments()
+      // Check every 5 minutes
+      const interval = setInterval(checkPendingRecruitments, 5 * 60 * 1000)
+      return () => clearInterval(interval)
+    }
+  }, [isRecruiter])
   
   // Get navigation items based on theme and user permissions
   const currentNavigation = getNavigationForUser(userRole, isAdmin, currentTheme)
@@ -87,6 +109,23 @@ export default function Navbar() {
           
             {user ? (
               <>
+                {/* Recruitment management link for recruiters */}
+                {isRecruiter && (
+                  <Link
+                    href="/recruitment/manage"
+                    className="mr-4 inline-flex items-center px-4 py-2.5 text-base font-semibold rounded-lg text-white bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                  >
+                    <div className="relative">
+                      <UserGroupIcon className="w-5 h-5 mr-2" />
+                      {pendingRecruitments > 0 && (
+                        <span className="absolute -top-2 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                          {pendingRecruitments}
+                        </span>
+                      )}
+                    </div>
+                    Gestión de Reclutamiento
+                  </Link>
+                )}
                 {/* Services link for authenticated users */}
                 <Link
                   href="/services"
@@ -189,9 +228,28 @@ export default function Navbar() {
             </DisclosureButton>
           ))}
           
-          {/* Services link for authenticated users - Mobile */}
+          {/* Mobile menu links for authenticated users */}
           {user && (
-            <div className="pt-4 pb-3 border-t border-white/20">
+            <div className="pt-4 pb-3 border-t border-white/20 space-y-3">
+              {/* Recruitment management link for recruiters - Mobile */}
+              {isRecruiter && (
+                <DisclosureButton
+                  as={Link}
+                  href="/recruitment/manage"
+                  className="flex items-center w-full px-4 py-3 text-lg font-semibold rounded-lg text-white bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 shadow-lg transition-all duration-200"
+                >
+                  <div className="relative">
+                    <UserGroupIcon className="w-6 h-6 mr-3" />
+                    {pendingRecruitments > 0 && (
+                      <span className="absolute -top-2 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                        {pendingRecruitments}
+                      </span>
+                    )}
+                  </div>
+                  Gestión de Reclutamiento
+                </DisclosureButton>
+              )}
+              {/* Services link - Mobile */}
               <DisclosureButton
                 as={Link}
                 href="/services"
