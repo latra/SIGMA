@@ -17,15 +17,79 @@ class RecruitmentService(FirestoreService):
         super().__init__()
         self.medical_recruitments_collection = "medical_recruitments"
         self.police_recruitments_collection = "police_recruitments"
-        self.discord_webhook_url = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/1410959590576881664/fhsW0-cugWe6xxzJyxtBJ7lF3aTl0xUjz7fngVo8NBu2LV5h4wBFrJVfo7WHMcnm-vwm")
+        self.discord_webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
 
     async def _send_discord_notification(self, recruitment_data: RecruitmentCreate) -> None:
         """Envía una notificación a Discord cuando se crea un nuevo recruitment"""
         try:
-            message_content = f"@everyone nueva solicitud entrante. El usuario {recruitment_data.name} con discord {recruitment_data.discord} ha enviado un formulario y está disponible en SIGMA"
+            # Determinar color según la profesión
+            color = 0x00ff00 if recruitment_data.profession == Profession.EMS else 0x0099ff  # Verde para EMS, Azul para Police
+            
+            # Crear el embed con información estructurada
+            embed = {
+                "title": "🆕 Nueva Solicitud de Reclutamiento",
+                "description": f"Se ha recibido una nueva solicitud para **{recruitment_data.profession.value.upper()}**",
+                "color": color,
+                "fields": [
+                    {
+                        "name": "👤 Nombre del Personaje",
+                        "value": recruitment_data.name,
+                        "inline": True
+                    },
+                    {
+                        "name": "💬 Discord",
+                        "value": recruitment_data.discord,
+                        "inline": True
+                    },
+                    {
+                        "name": "📱 Teléfono",
+                        "value": recruitment_data.phone,
+                        "inline": True
+                    },
+                    {
+                        "name": "🆔 DNI",
+                        "value": recruitment_data.dni,
+                        "inline": True
+                    },
+                    {
+                        "name": "🎯 Profesión",
+                        "value": recruitment_data.profession.value.upper(),
+                        "inline": True
+                    },
+                    {
+                        "name": "📝 Motivación",
+                        "value": recruitment_data.motivation[:1024] if len(recruitment_data.motivation) > 1024 else recruitment_data.motivation,
+                        "inline": False
+                    },
+                    {
+                        "name": "🎮 Experiencia Previa",
+                        "value": recruitment_data.experience[:1024] if len(recruitment_data.experience) > 1024 else recruitment_data.experience,
+                        "inline": False
+                    }
+                ],
+                "footer": {
+                    "text": "Sistema de Reclutamiento SIGMA • Revisar solicitud en el panel de administración",
+                    "icon_url": "https://cdn.discordapp.com/attachments/123456789/123456789/medical_icon.png"
+                },
+                "timestamp": datetime.now().isoformat(),
+                "url": "https://medicsystem-gta-frontend.onrender.com/recruitment/manage"
+            }
+            
+            # Agregar descripción del personaje si existe
+            if recruitment_data.description and len(recruitment_data.description) > 0:
+                description_text = "\n".join(recruitment_data.description)
+                if len(description_text) > 1024:
+                    description_text = description_text[:1021] + "..."
+                
+                embed["fields"].append({
+                    "name": "📋 Descripción del Personaje",
+                    "value": description_text,
+                    "inline": False
+                })
             
             payload = {
-                "content": message_content
+                "content": "@everyone",
+                "embeds": [embed]
             }
             
             async with httpx.AsyncClient() as client:
