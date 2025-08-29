@@ -22,6 +22,11 @@ class AttentionType(str, Enum):
     TRASLAD = "traslad"
     OTHER = "other"
 
+class Profession(str, Enum):
+    EMS = "EMS"
+    POLICE = "police"
+    OTHER = "other"
+
 class PatientStatus(str, Enum):
     CONSCIOUS = "conscious"
     UNCONSCIOUS = "unconscious"

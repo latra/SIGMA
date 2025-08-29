@@ -293,6 +293,7 @@ export interface Doctor {
   email: string
   enabled: boolean
   is_admin?: boolean | null
+  roles?: string[]
 }
 
 export async function getCurrentDoctor(): Promise<Doctor> {
@@ -859,4 +860,100 @@ export interface CertificateInfo {
 // Police certificate verification function
 export async function getCertificate(examId: string, patientDni: string): Promise<CertificateInfo> {
   return apiCall<CertificateInfo>(`/exams/get_certificate/${examId}/${patientDni}`)
+}
+
+// Recruitment System Types and Functions
+export type Profession = 'EMS' | 'POLICE'
+
+export interface RecruitmentRequest {
+  name: string
+  discord: string
+  phone: string
+  profession: Profession
+  dni: string
+  motivation: string
+  experience: string
+  description: string[]
+}
+
+export interface RecruitmentResponse {
+  id: string
+  name: string
+  discord: string
+  phone: string
+  profession: Profession
+  dni: string
+  motivation: string
+  experience: string
+  description: string[]
+  attended: boolean
+  attended_by: string | null
+  attended_at: string | null
+  created_at: string
+}
+
+export interface RecruitmentSubmissionResponse {
+  message: string
+  recruitment: RecruitmentResponse
+}
+
+// API function for recruitment submission (public endpoint, no auth required)
+export async function submitRecruitmentRequest(recruitmentData: RecruitmentRequest): Promise<RecruitmentSubmissionResponse> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  
+  const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/recruitment/`
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(recruitmentData)
+  })
+  
+  if (!response.ok) {
+    const errorMessage = `Recruitment submission failed: ${response.status} ${response.statusText}`
+    console.error(errorMessage)
+    
+    // Try to get more details from response
+    try {
+      const errorData = await response.text()
+      console.error('Error response body:', errorData)
+      
+      // Try to parse as JSON for better error messages
+      try {
+        const parsedError = JSON.parse(errorData)
+        if (parsedError.detail) {
+          throw new Error(parsedError.detail)
+        }
+      } catch (parseError) {
+        // If can't parse as JSON, use the raw text
+        throw new Error(errorData || errorMessage)
+      }
+    } catch (e) {
+      console.error('Could not read error response body')
+      throw new Error(errorMessage)
+    }
+  }
+  
+  return response.json()
+}
+
+// API functions for recruitment management (requires recruiter role)
+export async function getMedicalRecruitments(): Promise<RecruitmentResponse[]> {
+  return apiCall<RecruitmentResponse[]>('/recruitment/medical')
+}
+
+export async function getPendingMedicalRecruitments(): Promise<RecruitmentResponse[]> {
+  return apiCall<RecruitmentResponse[]>('/recruitment/medical/pending')
+}
+
+export async function getRecruitmentDetails(id: string): Promise<RecruitmentResponse> {
+  return apiCall<RecruitmentResponse>(`/recruitment/medical/${id}`)
+}
+
+export async function markRecruitmentAsAttended(id: string): Promise<RecruitmentResponse> {
+  return apiCall<RecruitmentResponse>(`/recruitment/medical/${id}/attend`, {
+    method: 'PUT'
+  })
 } 

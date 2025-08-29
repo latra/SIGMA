@@ -1,7 +1,7 @@
 from __future__ import annotations
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from schemas.enums import UserRole
 from uuid import uuid4
 
@@ -66,6 +66,14 @@ class DoctorDB(BaseModel):
     can_diagnose: bool = Field(True, description="Puede realizar diagnósticos")
     can_perform_procedures: bool = Field(True, description="Puede realizar procedimientos médicos")
     
+    # Roles adicionales
+    roles: List[str] = Field(default_factory=list, description="Roles adicionales del doctor (ej: recruiter)")
+    
+    @validator('roles', pre=True)
+    def validate_roles(cls, v):
+        """Compatibilidad hacia atrás: convertir None a lista vacía"""
+        return v if v is not None else []
+    
     # Metadatos
     created_at: datetime = Field(default_factory=datetime.now, description="Fecha de creación del perfil médico")
     updated_at: datetime = Field(default_factory=datetime.now, description="Última actualización del perfil médico")
@@ -96,6 +104,14 @@ class PoliceDB(BaseModel):
     can_arrest: bool = Field(True, description="Puede realizar arrestos")
     can_investigate: bool = Field(True, description="Puede realizar investigaciones")
     can_access_medical_info: bool = Field(False, description="Puede acceder a información médica limitada")
+    
+    # Roles adicionales
+    roles: List[str] = Field(default_factory=list, description="Roles adicionales del policía (ej: recruiter)")
+    
+    @validator('roles', pre=True)
+    def validate_roles_police(cls, v):
+        """Compatibilidad hacia atrás: convertir None a lista vacía"""
+        return v if v is not None else []
     
     # Metadatos
     created_at: datetime = Field(default_factory=datetime.now, description="Fecha de creación del perfil policial")
