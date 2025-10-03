@@ -108,7 +108,7 @@ export const getNavigationForUser = (userRole: string | null, isAdmin: boolean, 
 
     // Recruitment management - only recruiters
     if (item.href === '/recruitment/manage') {
-      return userRole === 'doctor' && isAdmin
+      return userRole === 'doctor'
     }
     
     return true

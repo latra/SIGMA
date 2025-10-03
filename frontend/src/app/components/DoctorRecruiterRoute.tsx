@@ -19,3 +19,4 @@ export default function DoctorRecruiterRoute({ children }: { children: React.Rea
 
   return <>{children}</>
 }
+

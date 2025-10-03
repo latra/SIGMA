@@ -4,7 +4,7 @@ from schemas.recruitment import RecruitmentCreate, RecruitmentComplete
 from schemas.enums import Profession
 from services.recruitment import RecruitmentService
 from services.user import UserService
-from auth.authorization import require_doctor_recruiter, require_police_recruiter
+from auth.authorization import require_doctor_recruiter, require_police_recruiter, require_doctor_or_admin
 from schemas.user import Doctor, Police
 import logging
 
@@ -42,7 +42,7 @@ async def create_recruitment_request(recruitment: RecruitmentCreate):
 
 @recruitment_router.get("/medical", response_model=List[dict])
 async def get_medical_recruitments(
-    current_doctor: Doctor = require_doctor_recruiter()
+    current_doctor: Doctor = require_doctor_or_admin()
 ):
     """
     Obtiene todas las solicitudes de reclutamiento médico
@@ -82,7 +82,7 @@ async def get_police_recruitments(
 
 @recruitment_router.get("/medical/pending", response_model=List[dict])
 async def get_pending_medical_recruitments(
-    current_doctor: Doctor = require_doctor_recruiter()
+    current_doctor: Doctor = require_doctor_or_admin()
 ):
     """
     Obtiene solo las solicitudes de reclutamiento médico no atendidas
@@ -123,7 +123,7 @@ async def get_pending_police_recruitments(
 @recruitment_router.put("/medical/{recruitment_id}/attend")
 async def mark_medical_recruitment_attended(
     recruitment_id: str,
-    current_doctor: Doctor = require_doctor_recruiter()
+    current_doctor: Doctor = require_doctor_or_admin()
 ):
     """
     Marca una solicitud de reclutamiento médico como atendida
@@ -187,7 +187,7 @@ async def mark_police_recruitment_attended(
 @recruitment_router.get("/medical/{recruitment_id}")
 async def get_medical_recruitment_by_id(
     recruitment_id: str,
-    current_doctor: Doctor = require_doctor_recruiter()
+    current_doctor: Doctor = require_doctor_or_admin()
 ):
     """
     Obtiene una solicitud de reclutamiento médico específica por ID

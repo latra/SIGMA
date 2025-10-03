@@ -26,7 +26,7 @@ export default function Navbar() {
   const userRole = systemUser?.role || (doctor ? 'doctor' : (police ? 'police' : null))
   const isAdmin = systemUser?.is_admin || doctor?.is_admin || police?.is_admin || false
   const currentUser = doctor || police
-  const isRecruiter = userRole === 'doctor' && isAdmin
+  const isRecruiter = userRole === 'doctor'
 
   // Check for pending recruitments
   useEffect(() => {
