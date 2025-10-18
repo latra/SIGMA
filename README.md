@@ -33,8 +33,6 @@ Have you found a bug? Report it by [creating a new issue](../../issues/new?templ
 ## 🤷‍♀️ Credits
 Created by [Paula "Latra" Gallucci](https://github.com/latra) with the special collaboration of "Raudive"
 
-Designed originally for Real RP server
-
 This project could not be possible without the previous work from:
 - [Sebastián "Tiangolo" Ramirez](http://tiangolo.com/) - FastAPI creator and main manteiner
 
